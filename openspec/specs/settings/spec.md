@@ -7,7 +7,7 @@ Defines how the player configures Tank Traffic Light: persisted settings and the
 ## Requirements
 
 ### Requirement: Persisted settings with defaults
-Settings SHALL persist per account in the `TankTrafficLightDB` saved variable. On load, any missing setting SHALL be filled with its default, and existing values SHALL be kept. Defaults: lights on, tank-only off, pulse on, placement left, scale 1, top offset 4, open world on, dungeons on, raids on, PvP off, trace-to-chat off, auto-probe off.
+Settings SHALL persist per account in the `TankTrafficLightDB` saved variable. On load, any missing setting SHALL be filled with its default, and existing values SHALL be kept. Defaults: lights on, tank-only off, pulse on, grey light on, grey opacity 0.45, colors Classic, placement left, scale 1, top offset 4, open world on, dungeons on, raids on, PvP off, slipping sound on, slipping sound choice Ping, healer sound on, healer sound choice Raid warning, healer flash on, trace-to-chat off, auto-probe off.
 
 #### Scenario: First install
 - **WHEN** the addon loads with no saved settings
@@ -16,6 +16,10 @@ Settings SHALL persist per account in the `TankTrafficLightDB` saved variable. O
 #### Scenario: New setting added in an update
 - **WHEN** saved settings exist but lack a newly introduced setting
 - **THEN** only that setting is filled with its default
+
+#### Scenario: Upgrading to alerts
+- **WHEN** a player with existing saved settings loads the version that adds alerts
+- **THEN** their existing settings are unchanged and the grey light, Classic colors and all three alerts are on
 
 ### Requirement: Reset all settings
 Resetting SHALL restore every setting to its default, refresh all lights, update the options window, and confirm in chat. The probe and trace logs SHALL NOT be cleared by a reset.
@@ -26,7 +30,8 @@ Resetting SHALL restore every setting to its default, refresh all lights, update
 
 ### Requirement: Options window
 The addon SHALL provide a movable options window that stays on screen and closes with Escape. It SHALL contain:
-- **Traffic lights**: show lights; only when tank (or no role); pulse yellow; placement button cycling Left, Right, Top; size field (0.5 to 3); top placement height field (0 to 60).
+- **Traffic lights**: show lights; only when tank (or no role); pulse yellow; grey light on mobs that aren't yours; grey light opacity field (0.1 to 1); colors button cycling Classic, Colorblind; placement button cycling Left, Right, Top; size field (0.5 to 3); top placement height field (0 to 60).
+- **Alerts**: sound when aggro starts slipping, with a button cycling its sound; sound when a mob attacks a healer, with a button cycling its sound; flash the screen when a mob attacks a healer; a "Test alerts" button.
 - **Show in**: open world; dungeons; raids; battlegrounds and arenas.
 - **Diagnostics**: print every light change to chat; record an API probe 3 seconds into every pull.
 - Buttons: demo toggle ("Demo: cycle colors" / "Stop demo") and "Reset all settings".
@@ -40,6 +45,14 @@ Every control SHALL apply immediately and refresh the lights.
 #### Scenario: Cycle placement
 - **WHEN** the placement button shows "Left" and is clicked
 - **THEN** placement becomes Right and the button reads "Right"
+
+#### Scenario: Cycle colors
+- **WHEN** the colors button shows "Classic" and is clicked
+- **THEN** the palette becomes Colorblind, the button reads "Colorblind", and visible lights repaint
+
+#### Scenario: Test alerts from the window
+- **WHEN** the player clicks "Test alerts"
+- **THEN** both alert sounds play and the flash appears with sample text
 
 ### Requirement: Numeric fields validate input
 Numeric settings SHALL be parsed and validated the same way whether entered in the options window or by slash command. Both a dot and a comma SHALL be accepted as the decimal separator. Size SHALL accept 0.5 to 3 and top placement height SHALL accept 0 to 60. Invalid or out-of-range input SHALL leave the setting unchanged and print one shared message naming the setting, its valid range, and its current value. In the window, fields SHALL apply on Enter or when focus is lost, Escape SHALL cancel the edit, and the field SHALL show the current value again after any rejected or cancelled edit.
@@ -78,9 +91,13 @@ The addon SHALL register a "Tank Traffic Light" page in the game's AddOns option
   - `lights`: toggle showing traffic lights
   - `tankonly`: toggle tank-only
   - `pulse`: toggle pulsing the yellow light
+  - `grey` or `gray`: toggle the grey light on mobs that aren't yours
+  - `greyalpha <n>` or `grayalpha <n>`: set grey light opacity (0.1 to 1)
+  - `colors [classic|colorblind]`: set the palette; with no argument, cycle Classic, Colorblind like the window's button
   - `side [left|right|top]`: set placement; with no argument, cycle Left, Right, Top like the window's button
   - `scale <n>` or `size <n>`: set light size (0.5 to 3)
   - `height <n>`: set top placement height (0 to 60)
+- Alerts: `slipsound`, `healersound`, `flash`: toggle each alert; `slipsoundname [ping|whisper|bell|alarm|readycheck|raidwarning]` and `healersoundname [...]`: choose each alert's sound (with no argument, cycle like the window's button; either way the new sound previews); `testalert`: run the alert test
 - Show in: `world`, `dungeon`, `raid`, `pvp`: toggle each zone filter
 - Diagnostics: `trace`, `auto`, `why`, `probe`, `clear` (see diagnostics spec)
 - Actions: `demo` toggles demo mode; `reset` restores all settings to defaults, like the window's button
@@ -102,6 +119,22 @@ The addon SHALL register a "Tank Traffic Light" page in the game's AddOns option
 #### Scenario: Invalid placement
 - **WHEN** the player types `/ttl side bottom`
 - **THEN** placement is unchanged and chat lists the valid choices
+
+#### Scenario: Set colorblind palette
+- **WHEN** the player types `/ttl colors colorblind`
+- **THEN** the palette becomes Colorblind and visible lights repaint
+
+#### Scenario: Toggle an alert
+- **WHEN** the player types `/ttl flash`
+- **THEN** the healer flash setting toggles and chat confirms with the window's label text
+
+#### Scenario: Choose a sound by chat
+- **WHEN** the player types `/ttl healersoundname bell`
+- **THEN** the healer sound becomes Bell, Bell plays once, and chat confirms
+
+#### Scenario: Invalid grey opacity
+- **WHEN** the player types `/ttl greyalpha 2`
+- **THEN** chat shows that grey light opacity must be a number from 0.1 to 1, with the current value, and nothing changes
 
 #### Scenario: Invalid scale
 - **WHEN** the player types `/ttl scale 5`
