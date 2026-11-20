@@ -211,8 +211,13 @@ local function CreateLight(plate)
     return f
 end
 
+-- Current palette: state -> { r, g, b }. Shared with the mob list.
+function L.Colors()
+    return PALETTES[TankTrafficLightDB.palette] or PALETTES.classic
+end
+
 local function Paint(f, state)
-    local colors = PALETTES[TankTrafficLightDB.palette] or PALETTES.classic
+    local colors = L.Colors()
     for lampState, lamp in pairs(f.lamps) do
         local c = colors[lampState]
         local k = (lampState == state) and 1 or DIM -- GREY matches no lamp: all dimmed
@@ -270,6 +275,11 @@ local function Attach(unit)
     return f
 end
 
+-- Tell the mob list a unit is gone; a list bug must never break the lights.
+local function ListRemove(unit)
+    if TT.MobList and TT.MobList.Remove then pcall(TT.MobList.Remove, unit) end
+end
+
 local function Detach(unit)
     local f = lights[unit]
     if f and f.unit == unit then
@@ -279,6 +289,7 @@ local function Detach(unit)
         f.unit, f.guid, f.state, f.alertHealerKey = nil, nil, nil, nil
     end
     lights[unit] = nil
+    ListRemove(unit)
 end
 
 -- Which "Show in" setting applies to where the player is right now.
@@ -298,8 +309,8 @@ local function ZoneAllowed()
     return TankTrafficLightDB[key] and true or false
 end
 
-local function ShouldRun()
-    if not TankTrafficLightDB.lights then return false end
+-- Zone filter and tank-only: shared by the lights and the mob list.
+local function Allowed()
     if not ZoneAllowed() then return false end
     if TankTrafficLightDB.tankOnly then
         local ok, role = Read(UnitGroupRolesAssigned, "player")
@@ -308,26 +319,41 @@ local function ShouldRun()
     return true
 end
 
+-- Classify when allowed and at least one feature (lights or list) wants the result.
+local function ShouldClassify()
+    if not (TankTrafficLightDB.lights or TankTrafficLightDB.mobList) then return false end
+    return Allowed()
+end
+
 function L.Update(unit)
     local f = Attach(unit)
-    if not f then return end
+    if not f then
+        ListRemove(unit)
+        return
+    end
     local state, why
-    local running = false
+    local classified = false
     if demoMode then
         state = DEMO_ORDER[(demoStep % #DEMO_ORDER) + 1]
-    elseif ShouldRun() then
-        running = true
+    elseif ShouldClassify() then
+        classified = true
         state, why = L.StateFor(unit)
         if state ~= f.state then Trace(unit, f.state, state, why) end
     end
-    if running then
+    local lightsOn = TankTrafficLightDB.lights and true or false
+    if classified and lightsOn then
         -- Alerts only see real classification; an alert bug must never break the lights.
         if TT.Alerts and TT.Alerts.OnState then pcall(TT.Alerts.OnState, unit, f, f.state, state) end
     else
         f.alertHealerKey = nil
     end
+    if classified then
+        if TT.MobList and TT.MobList.OnState then pcall(TT.MobList.OnState, unit, f.guid, state) end
+    else
+        ListRemove(unit)
+    end
     f.state = state
-    if state then
+    if state and (lightsOn or demoMode) then
         Paint(f, state)
         f:Show()
     else
@@ -348,14 +374,16 @@ end
 function L.SetDemo(on)
     demoMode = on
     L.UpdateAll()
+    if TT.MobList and TT.MobList.SetDemo then pcall(TT.MobList.SetDemo, on) end
 end
 
 function L.IsDemo() return demoMode end
 
 -- Prints, for every visible nameplate, what the light decided and why.
 function L.Explain(say)
-    say("lights=" .. tostring(TankTrafficLightDB.lights) .. " tankOnly=" .. tostring(TankTrafficLightDB.tankOnly)
-        .. " shouldRun=" .. tostring(ShouldRun()) .. " demo=" .. tostring(demoMode))
+    say("lights=" .. tostring(TankTrafficLightDB.lights) .. " list=" .. tostring(TankTrafficLightDB.mobList)
+        .. " tankOnly=" .. tostring(TankTrafficLightDB.tankOnly) .. " allowed=" .. tostring(Allowed())
+        .. " classify=" .. tostring(ShouldClassify()) .. " demo=" .. tostring(demoMode))
     local count = 0
     for i = 1, 40 do
         local unit = "nameplate" .. i
