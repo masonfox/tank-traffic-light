@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: Tank Traffic Light
+## Notes: Shows tanks which mobs are on them, which are loose, and which are about to slip.
+## Author: Stand and Hit
+## Version: 0.1.0
+## SavedVariables: TankTrafficLightDB
+
+Safe.lua
+Probe.lua
+Lights.lua
+Options.lua
+Core.lua
