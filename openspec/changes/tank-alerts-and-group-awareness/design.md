@@ -52,6 +52,12 @@ A `Frame` on `UIParent` at `FULLSCREEN_DIALOG` strata with `EnableMouse(false)`.
 ### Settings
 New registry entries: `showGrey` (toggle, slash `grey`/`gray`), `palette` (choice `classic`/`colorblind`, slash `colors`), `slipSound`, `healerSound`, `healerFlash` (toggles, slash `slipsound`/`healersound`/`flash`). A new section "Alerts" goes between "Traffic lights" and "Show in". `testalert` is an action in `Core.lua`'s slash handler, like `demo`, and the help output lists it under Alerts. Choice entries already work through `Settings.Cycle`, so the colors button reuses the placement button's pattern. The panel grows by about 150px (the Traffic lights box gains two rows, plus the new Alerts box).
 
+### Configurable grey opacity and alert sounds (added after first implementation)
+- `greyAlpha`: a number entry (0.1 to 1, default 0.45, slash `greyalpha`/`grayalpha`). It replaces the `GREY_ALPHA` constant in `Paint`, and the existing `Settings.Set` → `UpdateAll` repaints it.
+- `slipSoundName` / `healerSoundName`: choice entries over one shared list `SOUNDS = { ping = IG_PLAYER_INVITE, whisper = TELL_MESSAGE, bell = ALARM_CLOCK_WARNING_2, alarm = ALARM_CLOCK_WARNING_3, readycheck = READY_CHECK, raidwarning = RAID_WARNING }`, with labels Ping, Whisper, Bell, Alarm, Ready check, Raid warning. The ids are looked up by SOUNDKIT name at play time, and a missing one means silence. This replaces the hard-coded fallback lists (a choice entry has no "fallback" concept). The cycle button and `Settings.Cycle` already exist for choices.
+- **Preview**: choice entries get an optional `onChange` hook in the registry, called from `Settings.Set` after a successful change. The two sound entries use it to play the new sound. This keeps the window and slash commands in parity without special cases.
+- *Alternative*: LibSharedMedia sounds. Rejected for now (the user chose the built-in list), but the `SOUNDS` table is where it would plug in.
+
 ## Risks / Trade-offs
 
 - [Class guess flags DPS priests, shadow priests, ret paladins and others as healers in role-less groups] → This was an accepted trade-off. Players can turn off the healer alerts, and an assigned role always overrides the class.

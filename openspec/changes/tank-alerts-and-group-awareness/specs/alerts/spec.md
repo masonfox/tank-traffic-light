@@ -16,7 +16,7 @@ Alerts SHALL fire only from real light classification during normal operation: w
 - **THEN** no alert fires
 
 ### Requirement: Slipping sound
-When the slipping-sound setting is on and a mob's light changes to YELLOW from any other state, the addon SHALL play the slipping sound. The slipping sound SHALL play at most once every 2 seconds, no matter how many mobs turn YELLOW.
+When the slipping-sound setting is on and a mob's light changes to YELLOW from any other state, the addon SHALL play the chosen slipping sound. The slipping sound SHALL play at most once every 2 seconds, no matter how many mobs turn YELLOW.
 
 #### Scenario: Mob starts slipping
 - **WHEN** a GREEN mob turns YELLOW
@@ -64,8 +64,23 @@ A mob SHALL be "on a healer" when its light is RED and its current target is rea
 - **WHEN** a mob attacks a co-tank who is also a Paladin with no role
 - **THEN** no mob-on-healer alert fires, because the light is GREY, not RED
 
+### Requirement: Sound choice
+The slipping sound and the healer sound SHALL each be chosen from the same built-in list of game sounds: Ping, Whisper, Bell, Alarm, Ready check, Raid warning. Defaults: slipping = Ping, healer = Raid warning. Choosing a sound, from the window or by slash command, SHALL play it once as a preview. If the chosen sound does not exist on the client, its alert SHALL be silent and SHALL NOT error.
+
+#### Scenario: Pick a healer sound
+- **WHEN** the player cycles the healer sound from Raid warning to Ping
+- **THEN** Ping plays once and later mob-on-healer alerts play Ping
+
+#### Scenario: Same sound for both
+- **WHEN** the player chooses Bell for both alerts
+- **THEN** both alerts play Bell
+
+#### Scenario: Sound missing on client
+- **WHEN** the chosen sound is not available on the client
+- **THEN** the alert is silent and no error is raised
+
 ### Requirement: Mob-on-healer sound
-When the healer-sound setting is on, each mob-on-healer alert SHALL play the healer sound, which SHALL be different from the slipping sound and more urgent.
+When the healer-sound setting is on, each mob-on-healer alert SHALL play the chosen healer sound. By default it is different from the slipping sound and more urgent.
 
 #### Scenario: Healer sound
 - **WHEN** a mob-on-healer alert fires with the healer-sound setting on

@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Three-lamp traffic light
-Each light SHALL be a dark housing with three round lamps ordered red, yellow, green. For RED, YELLOW and GREEN, the lamp matching the current state SHALL be lit at full brightness in the active palette's color and the other two SHALL be dimmed. For GREY, all three lamps SHALL be dimmed and the whole light SHALL be drawn at reduced opacity, so it is visibly present but clearly quieter than a lit light. When a unit has no state, its light SHALL be hidden.
+Each light SHALL be a dark housing with three round lamps ordered red, yellow, green. For RED, YELLOW and GREEN, the lamp matching the current state SHALL be lit at full brightness in the active palette's color and the other two SHALL be dimmed. For GREY, all three lamps SHALL be dimmed and the whole light SHALL be drawn at the grey-opacity setting (0.1 to 1, default 0.45), so it is visibly present but quieter than a lit light. Changing the grey opacity SHALL repaint visible GREY lights immediately. When a unit has no state, its light SHALL be hidden.
 
 #### Scenario: Unit is GREEN
 - **WHEN** a unit is classified GREEN
@@ -9,7 +9,11 @@ Each light SHALL be a dark housing with three round lamps ordered red, yellow, g
 
 #### Scenario: Unit is GREY
 - **WHEN** a unit is classified GREY
-- **THEN** its light is shown at reduced opacity with no lamp lit
+- **THEN** its light is shown at the grey-opacity setting with no lamp lit
+
+#### Scenario: Grey opacity changed
+- **WHEN** the player sets grey opacity to 0.2 while GREY lights are visible
+- **THEN** those lights immediately redraw at 0.2 opacity
 
 #### Scenario: Unit changes from GREY to RED
 - **WHEN** a GREY unit becomes RED

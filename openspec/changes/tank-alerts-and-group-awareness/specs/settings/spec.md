@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Persisted settings with defaults
-Settings SHALL persist per account in the `TankTrafficLightDB` saved variable. On load, any missing setting SHALL be filled with its default, and existing values SHALL be kept. Defaults: lights on, tank-only off, pulse on, grey light on, colors Classic, placement left, scale 1, top offset 4, open world on, dungeons on, raids on, PvP off, slipping sound on, healer sound on, healer flash on, trace-to-chat off, auto-probe off.
+Settings SHALL persist per account in the `TankTrafficLightDB` saved variable. On load, any missing setting SHALL be filled with its default, and existing values SHALL be kept. Defaults: lights on, tank-only off, pulse on, grey light on, grey opacity 0.45, colors Classic, placement left, scale 1, top offset 4, open world on, dungeons on, raids on, PvP off, slipping sound on, slipping sound choice Ping, healer sound on, healer sound choice Raid warning, healer flash on, trace-to-chat off, auto-probe off.
 
 #### Scenario: First install
 - **WHEN** the addon loads with no saved settings
@@ -17,8 +17,8 @@ Settings SHALL persist per account in the `TankTrafficLightDB` saved variable. O
 
 ### Requirement: Options window
 The addon SHALL provide a movable options window that stays on screen and closes with Escape. It SHALL contain:
-- **Traffic lights**: show lights; only when tank (or no role); pulse yellow; grey light on mobs that aren't yours; colors button cycling Classic, Colorblind; placement button cycling Left, Right, Top; size field (0.5 to 3); top placement height field (0 to 60).
-- **Alerts**: sound when aggro starts slipping; sound when a mob attacks a healer; flash the screen when a mob attacks a healer; a "Test alerts" button.
+- **Traffic lights**: show lights; only when tank (or no role); pulse yellow; grey light on mobs that aren't yours; grey light opacity field (0.1 to 1); colors button cycling Classic, Colorblind; placement button cycling Left, Right, Top; size field (0.5 to 3); top placement height field (0 to 60).
+- **Alerts**: sound when aggro starts slipping, with a button cycling its sound; sound when a mob attacks a healer, with a button cycling its sound; flash the screen when a mob attacks a healer; a "Test alerts" button.
 - **Show in**: open world; dungeons; raids; battlegrounds and arenas.
 - **Diagnostics**: print every light change to chat; record an API probe 3 seconds into every pull.
 - Buttons: demo toggle ("Demo: cycle colors" / "Stop demo") and "Reset all settings".
@@ -49,11 +49,12 @@ Every control SHALL apply immediately and refresh the lights.
   - `tankonly`: toggle tank-only
   - `pulse`: toggle pulsing the yellow light
   - `grey` or `gray`: toggle the grey light on mobs that aren't yours
+  - `greyalpha <n>` or `grayalpha <n>`: set grey light opacity (0.1 to 1)
   - `colors [classic|colorblind]`: set the palette; with no argument, cycle Classic, Colorblind like the window's button
   - `side [left|right|top]`: set placement; with no argument, cycle Left, Right, Top like the window's button
   - `scale <n>` or `size <n>`: set light size (0.5 to 3)
   - `height <n>`: set top placement height (0 to 60)
-- Alerts: `slipsound`, `healersound`, `flash`: toggle each alert; `testalert`: run the alert test
+- Alerts: `slipsound`, `healersound`, `flash`: toggle each alert; `slipsoundname [ping|whisper|bell|alarm|readycheck|raidwarning]` and `healersoundname [...]`: choose each alert's sound (with no argument, cycle like the window's button; either way the new sound previews); `testalert`: run the alert test
 - Show in: `world`, `dungeon`, `raid`, `pvp`: toggle each zone filter
 - Diagnostics: `trace`, `auto`, `why`, `probe`, `clear` (see diagnostics spec)
 - Actions: `demo` toggles demo mode; `reset` restores all settings to defaults, like the window's button
@@ -83,6 +84,14 @@ Every control SHALL apply immediately and refresh the lights.
 #### Scenario: Toggle an alert
 - **WHEN** the player types `/ttl flash`
 - **THEN** the healer flash setting toggles and chat confirms with the window's label text
+
+#### Scenario: Choose a sound by chat
+- **WHEN** the player types `/ttl healersoundname bell`
+- **THEN** the healer sound becomes Bell, Bell plays once, and chat confirms
+
+#### Scenario: Invalid grey opacity
+- **WHEN** the player types `/ttl greyalpha 2`
+- **THEN** chat shows that grey light opacity must be a number from 0.1 to 1, with the current value, and nothing changes
 
 #### Scenario: Invalid scale
 - **WHEN** the player types `/ttl scale 5`
