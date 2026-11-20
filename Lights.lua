@@ -3,16 +3,28 @@ local S = TT.Safe
 local L = {}
 TT.Lights = L
 
--- Traffic light states
-local GREEN, YELLOW, RED = "green", "yellow", "red"
-local ORDER = { RED, YELLOW, GREEN } -- top to bottom, like a real light
+-- Traffic light states. GREY = "a light, but not yours" (stranger or co-tank).
+local GREEN, YELLOW, RED, GREY = "green", "yellow", "red", "grey"
+TT.States = { GREEN = GREEN, YELLOW = YELLOW, RED = RED, GREY = GREY }
+local ORDER = { RED, YELLOW, GREEN } -- lamps top to bottom, like a real light
+local DEMO_ORDER = { RED, YELLOW, GREEN, GREY }
 
-local COLORS = {
-    [RED]    = { 0.95, 0.15, 0.10 },
-    [YELLOW] = { 1.00, 0.80, 0.05 },
-    [GREEN]  = { 0.15, 0.90, 0.25 },
+-- Lit-lamp colors per palette. Colorblind is Okabe-Ito (vermilion / yellow / blue),
+-- brightened a little so it stands out against the dark housing.
+local PALETTES = {
+    classic = {
+        [RED]    = { 0.95, 0.15, 0.10 },
+        [YELLOW] = { 1.00, 0.80, 0.05 },
+        [GREEN]  = { 0.15, 0.90, 0.25 },
+    },
+    colorblind = {
+        [RED]    = { 0.90, 0.40, 0.00 },
+        [YELLOW] = { 0.94, 0.89, 0.26 },
+        [GREEN]  = { 0.10, 0.55, 0.85 },
+    },
 }
 local DIM = 0.18          -- brightness multiplier for unlit lamps
+local GREY_ALPHA = 0.45   -- whole-light opacity for GREY
 local LAMP_SIZE = 9
 local LAMP_GAP = 1
 local CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
@@ -42,9 +54,27 @@ local function IsGroupMember(unit)
     if okRaid and inRaid ~= nil then return true end
     return false
 end
+L.IsGroupMember = IsGroupMember
 
--- Returns GREEN / YELLOW / RED (or nil for no light), plus a reason string for tracing.
-function L.StateFor(unit)
+-- Another tank in the player's group: TANK role or raid main-tank assignment.
+-- Anything unreadable counts as "not a co-tank" (fail toward loose / RED).
+-- Returns true plus a short reason when it is one.
+local function IsCoTank(target)
+    local okP, isPlayer = Read(UnitIsUnit, target, "player")
+    if not okP or isPlayer then return false end
+    local okPet, isPet = Read(UnitIsUnit, target, "pet")
+    if not okPet or isPet then return false end
+    if not IsGroupMember(target) then return false end
+    local okRole, role = Read(UnitGroupRolesAssigned, target)
+    if okRole and role == "TANK" then return true, "co-tank: role TANK" end
+    local okMT, mainTank = Read(GetPartyAssignment, "MAINTANK", target)
+    if okMT and mainTank then return true, "co-tank: main tank" end
+    return false
+end
+L.IsCoTank = IsCoTank
+
+-- Returns GREEN / YELLOW / RED / GREY (or nil for no light), plus a reason string for tracing.
+local function Classify(unit)
     local okAtk, canAttack = Read(UnitCanAttack, "player", unit)
     if not okAtk or not canAttack then return nil, "not attackable" end
     local okCombat, inCombat = Read(UnitAffectingCombat, unit)
@@ -62,11 +92,15 @@ function L.StateFor(unit)
         if status == 3 then return GREEN, why end
         if status == 2 then return YELLOW, why end
         if status == 0 or status == 1 then
-            -- Only red when it's loose on *your* group. A mob you tagged that is
-            -- fighting a stranger in the open world isn't your problem.
+            -- Only red when it's loose on *your* group. A mob fighting a stranger,
+            -- or held by another tank in your group, isn't your problem: GREY.
             local okEx, ex = Read(UnitExists, target)
-            if okEx and ex and not IsGroupMember(target) then
-                return nil, why .. " (on someone outside your group)"
+            if okEx and ex then
+                if not IsGroupMember(target) then
+                    return GREY, why .. " (on someone outside your group)"
+                end
+                local coTank, coWhy = IsCoTank(target)
+                if coTank then return GREY, why .. " (" .. coWhy .. ")" end
             end
             return RED, why
         end
@@ -81,8 +115,22 @@ function L.StateFor(unit)
         -- Without a readable status we can't tell "slipping", only "on you".
         return GREEN, why .. " (fallback)"
     end
-    if IsGroupMember(target) then return RED, why .. " (fallback)" end
-    return nil, why .. " (target not in group)"
+    if IsGroupMember(target) then
+        local coTank, coWhy = IsCoTank(target)
+        if coTank then return GREY, why .. " (fallback, " .. coWhy .. ")" end
+        return RED, why .. " (fallback)"
+    end
+    return GREY, why .. " (fallback, target not in group)"
+end
+
+-- Classification plus the grey-light setting: with it off, GREY shows no light,
+-- but the reason still says what was decided.
+function L.StateFor(unit)
+    local state, why = Classify(unit)
+    if state == GREY and not TankTrafficLightDB.showGrey then
+        return nil, (why or "") .. " (grey off)"
+    end
+    return state, why
 end
 
 ---------------------------------------------------------------------------
@@ -165,16 +213,20 @@ local function CreateLight(plate)
 end
 
 local function Paint(f, state)
+    local colors = PALETTES[TankTrafficLightDB.palette] or PALETTES.classic
     for lampState, lamp in pairs(f.lamps) do
-        local c = COLORS[lampState]
-        local k = (lampState == state) and 1 or DIM
+        local c = colors[lampState]
+        local k = (lampState == state) and 1 or DIM -- GREY matches no lamp: all dimmed
         lamp:SetVertexColor(c[1] * k, c[2] * k, c[3] * k, 1)
     end
     if state == YELLOW and TankTrafficLightDB.pulse then
-        if not f.pulse:IsPlaying() then f.pulse:Play() end
-    elseif f.pulse:IsPlaying() then
-        f.pulse:Stop()
-        f:SetAlpha(1)
+        if not f.pulse:IsPlaying() then
+            f:SetAlpha(1)
+            f.pulse:Play()
+        end
+    else
+        if f.pulse:IsPlaying() then f.pulse:Stop() end
+        f:SetAlpha(state == GREY and GREY_ALPHA or 1) -- GREY never pulses
     end
 end
 
@@ -198,7 +250,7 @@ local function Attach(unit)
     guid = okGuid and guid or nil
     if f.unit ~= unit or f.guid ~= guid then
         -- This frame now belongs to a different mob: forget the old color.
-        f.unit, f.guid, f.state = unit, guid, nil
+        f.unit, f.guid, f.state, f.alertHealerKey = unit, guid, nil, nil
         f.pulse:Stop()
         f:SetAlpha(1)
     end
@@ -223,8 +275,9 @@ local function Detach(unit)
     local f = lights[unit]
     if f and f.unit == unit then
         f.pulse:Stop()
+        f:SetAlpha(1)
         f:Hide()
-        f.unit, f.guid, f.state = nil, nil, nil
+        f.unit, f.guid, f.state, f.alertHealerKey = nil, nil, nil, nil
     end
     lights[unit] = nil
 end
@@ -260,11 +313,19 @@ function L.Update(unit)
     local f = Attach(unit)
     if not f then return end
     local state, why
+    local running = false
     if demoMode then
-        state = ORDER[(demoStep % 3) + 1]
+        state = DEMO_ORDER[(demoStep % #DEMO_ORDER) + 1]
     elseif ShouldRun() then
+        running = true
         state, why = L.StateFor(unit)
         if state ~= f.state then Trace(unit, f.state, state, why) end
+    end
+    if running then
+        -- Alerts only see real classification; an alert bug must never break the lights.
+        if TT.Alerts and TT.Alerts.OnState then pcall(TT.Alerts.OnState, unit, f, f.state, state) end
+    else
+        f.alertHealerKey = nil
     end
     f.state = state
     if state then
@@ -272,6 +333,7 @@ function L.Update(unit)
         f:Show()
     else
         f.pulse:Stop()
+        f:SetAlpha(1)
         f:Hide()
     end
 end
