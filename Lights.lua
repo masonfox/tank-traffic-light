@@ -24,7 +24,6 @@ local PALETTES = {
     },
 }
 local DIM = 0.18          -- brightness multiplier for unlit lamps
-local GREY_ALPHA = 0.45   -- whole-light opacity for GREY
 local LAMP_SIZE = 9
 local LAMP_GAP = 1
 local CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
@@ -226,7 +225,7 @@ local function Paint(f, state)
         end
     else
         if f.pulse:IsPlaying() then f.pulse:Stop() end
-        f:SetAlpha(state == GREY and GREY_ALPHA or 1) -- GREY never pulses
+        f:SetAlpha(state == GREY and (TankTrafficLightDB.greyAlpha or 0.45) or 1) -- GREY never pulses
     end
 end
 
