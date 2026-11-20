@@ -20,5 +20,5 @@
 
 ## 4. Parity verification
 
-- [ ] 4.1 With the options window open, run every slash command and confirm the matching control updates immediately; walk every window control and confirm a slash command exists for it (spec: "Options window and slash commands stay in parity")
+- [x] 4.1 With the options window open, run every slash command and confirm the matching control updates immediately; walk every window control and confirm a slash command exists for it (spec: "Options window and slash commands stay in parity")
 - [x] 4.2 Bump `## Version` in the `.toc` and verify the addon list shows the new version
