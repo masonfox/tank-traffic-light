@@ -8,6 +8,8 @@ TT.DEFAULTS = {
     lights = true,
     tankOnly = false,
     pulse = true,
+    showGrey = true,
+    palette = "classic",
     side = "left",
     lightScale = 1,
     topOffset = 4,
@@ -15,6 +17,9 @@ TT.DEFAULTS = {
     showDungeon = true,
     showRaid = true,
     showPvP = false,
+    slipSound = true,
+    healerSound = true,
+    healerFlash = true,
     trace = false,
     autoProbe = false,
 }
@@ -75,6 +80,9 @@ local function PrintHelp()
                 commands[#commands + 1] = usage
             end
         end
+        if section == "Alerts" then
+            commands[#commands + 1] = "testalert"
+        end
         if section == "Diagnostics" then
             commands[#commands + 1] = "why"
             commands[#commands + 1] = "probe"
@@ -107,6 +115,9 @@ SlashCmdList.TANKTRAFFICLIGHT = function(msg)
             local log = TankTrafficLightDB.traceLog
             log[#log + 1] = "WHY " .. line
         end)
+    elseif cmd == "testalert" then
+        TT.Alerts.Test()
+        Say("testing alerts: slipping sound, then healer sound and flash")
     elseif cmd == "demo" then
         TT.Lights.SetDemo(not TT.Lights.IsDemo())
         Say("demo mode (cycles every visible nameplate): " .. OnOff(TT.Lights.IsDemo()))

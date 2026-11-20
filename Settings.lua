@@ -1,6 +1,6 @@
 local _, TT = ...
 local Settings = {
-    Sections = { "Traffic lights", "Show in", "Diagnostics" },
+    Sections = { "Traffic lights", "Alerts", "Show in", "Diagnostics" },
     Entries = {
         { key = "lights", kind = "toggle", label = "Show traffic lights on enemy nameplates",
             section = "Traffic lights", slash = { "lights" } },
@@ -8,6 +8,11 @@ local Settings = {
             section = "Traffic lights", slash = { "tankonly" } },
         { key = "pulse", kind = "toggle", label = "Pulse the yellow light when aggro is slipping",
             section = "Traffic lights", slash = { "pulse" } },
+        { key = "showGrey", kind = "toggle", label = "Grey light on mobs that aren't yours",
+            section = "Traffic lights", slash = { "grey", "gray" } },
+        { key = "palette", kind = "choice", label = "Colors",
+            section = "Traffic lights", slash = { "colors" }, values = { "classic", "colorblind" },
+            labels = { classic = "Classic", colorblind = "Colorblind" } },
         { key = "side", kind = "choice", label = "Placement on the nameplate",
             section = "Traffic lights", slash = { "side" }, values = { "left", "right", "top" },
             labels = { left = "Left", right = "Right", top = "Top" } },
@@ -15,6 +20,12 @@ local Settings = {
             section = "Traffic lights", slash = { "scale", "size" }, min = 0.5, max = 3 },
         { key = "topOffset", kind = "number", label = "Top placement height", name = "top placement height",
             section = "Traffic lights", slash = { "height" }, min = 0, max = 60 },
+        { key = "slipSound", kind = "toggle", label = "Sound when aggro starts slipping",
+            section = "Alerts", slash = { "slipsound" } },
+        { key = "healerSound", kind = "toggle", label = "Sound when a mob attacks a healer",
+            section = "Alerts", slash = { "healersound" } },
+        { key = "healerFlash", kind = "toggle", label = "Flash the screen when a mob attacks a healer",
+            section = "Alerts", slash = { "flash" } },
         { key = "showWorld", kind = "toggle", label = "Open world",
             section = "Show in", slash = { "world" } },
         { key = "showDungeon", kind = "toggle", label = "Dungeons",
