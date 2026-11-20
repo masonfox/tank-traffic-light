@@ -8,6 +8,7 @@
 Safe.lua
 Settings.lua
 Probe.lua
+Alerts.lua
 Lights.lua
 Options.lua
 Core.lua

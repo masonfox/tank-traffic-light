@@ -1,6 +1,26 @@
 local _, TT = ...
+
+-- Built-in alert sounds: choice value -> SOUNDKIT name (looked up at play time;
+-- a name missing on this client means silence). Shared by both alert sounds.
+TT.SOUNDS = {
+    ping = "IG_PLAYER_INVITE",
+    whisper = "TELL_MESSAGE",
+    bell = "ALARM_CLOCK_WARNING_2",
+    alarm = "ALARM_CLOCK_WARNING_3",
+    readycheck = "READY_CHECK",
+    raidwarning = "RAID_WARNING",
+}
+local SOUND_VALUES = { "ping", "whisper", "bell", "alarm", "readycheck", "raidwarning" }
+local SOUND_LABELS = { ping = "Ping", whisper = "Whisper", bell = "Bell", alarm = "Alarm",
+    readycheck = "Ready check", raidwarning = "Raid warning" }
+
+-- onChange for sound choices: play the newly chosen sound once as a preview.
+local function PreviewSound(value)
+    if TT.Alerts and TT.Alerts.PlayChoice then TT.Alerts.PlayChoice(value) end
+end
+
 local Settings = {
-    Sections = { "Traffic lights", "Show in", "Diagnostics" },
+    Sections = { "Traffic lights", "Alerts", "Show in", "Diagnostics" },
     Entries = {
         { key = "lights", kind = "toggle", label = "Show traffic lights on enemy nameplates",
             section = "Traffic lights", slash = { "lights" } },
@@ -8,6 +28,13 @@ local Settings = {
             section = "Traffic lights", slash = { "tankonly" } },
         { key = "pulse", kind = "toggle", label = "Pulse the yellow light when aggro is slipping",
             section = "Traffic lights", slash = { "pulse" } },
+        { key = "showGrey", kind = "toggle", label = "Grey light on mobs that aren't yours",
+            section = "Traffic lights", slash = { "grey", "gray" } },
+        { key = "greyAlpha", kind = "number", label = "Grey light opacity", name = "grey light opacity",
+            section = "Traffic lights", slash = { "greyalpha", "grayalpha" }, min = 0.1, max = 1 },
+        { key = "palette", kind = "choice", label = "Colors",
+            section = "Traffic lights", slash = { "colors" }, values = { "classic", "colorblind" },
+            labels = { classic = "Classic", colorblind = "Colorblind" } },
         { key = "side", kind = "choice", label = "Placement on the nameplate",
             section = "Traffic lights", slash = { "side" }, values = { "left", "right", "top" },
             labels = { left = "Left", right = "Right", top = "Top" } },
@@ -15,6 +42,18 @@ local Settings = {
             section = "Traffic lights", slash = { "scale", "size" }, min = 0.5, max = 3 },
         { key = "topOffset", kind = "number", label = "Top placement height", name = "top placement height",
             section = "Traffic lights", slash = { "height" }, min = 0, max = 60 },
+        { key = "slipSound", kind = "toggle", label = "Sound when aggro starts slipping",
+            section = "Alerts", slash = { "slipsound" } },
+        { key = "slipSoundName", kind = "choice", label = "Slipping sound",
+            section = "Alerts", slash = { "slipsoundname" }, values = SOUND_VALUES, labels = SOUND_LABELS,
+            onChange = PreviewSound },
+        { key = "healerSound", kind = "toggle", label = "Sound when a mob attacks a healer",
+            section = "Alerts", slash = { "healersound" } },
+        { key = "healerSoundName", kind = "choice", label = "Healer sound",
+            section = "Alerts", slash = { "healersoundname" }, values = SOUND_VALUES, labels = SOUND_LABELS,
+            onChange = PreviewSound },
+        { key = "healerFlash", kind = "toggle", label = "Flash the screen when a mob attacks a healer",
+            section = "Alerts", slash = { "flash" } },
         { key = "showWorld", kind = "toggle", label = "Open world",
             section = "Show in", slash = { "world" } },
         { key = "showDungeon", kind = "toggle", label = "Dungeons",
@@ -72,6 +111,7 @@ function Settings.Set(key, raw)
     TankTrafficLightDB[key] = value
     TT.Lights.UpdateAll()
     TT.RefreshOptions()
+    if entry.onChange then pcall(entry.onChange, value) end -- optional per-entry hook (e.g. sound preview)
     return true, entry.label .. ": " .. display
 end
 
