@@ -30,6 +30,6 @@
 ## 6. Demo and finish
 
 - [x] 6.1 Add `TT.MobList.SetDemo(on)`, called from `L.SetDemo`, which draws the fixed sample rows. Verify: `/ttl demo` with no nameplates shows the sample rows and counts; stopping the demo out of combat hides the list; with the list off, demo shows no list.
-- [ ] 6.2 Reset check: drag and minimize the list, then click "Reset all settings". Verify: the list returns to its default position, expanded and locked.
+- [x] 6.2 Reset check: drag and minimize the list, then click "Reset all settings". Verify: the list returns to its default position, expanded and locked.
 - [x] 6.3 Bump `## Version` in the `.toc` to 0.3.0. Verify: the addon list shows the new version.
-- [ ] 6.4 Play check: a dungeon pull with the list on (lights on, then lights off), plus the off-screen check (turn away from a fighting mob and run `/ttl why`). Note the results in the change before archiving.
+- [x] 6.4 Play check: a dungeon pull with the list on (lights on, then lights off), plus the off-screen check (turn away from a fighting mob and run `/ttl why`). Note the results in the change before archiving.
