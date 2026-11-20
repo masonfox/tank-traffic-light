@@ -5,9 +5,13 @@ local SettingsRegistry = TT.Settings
 local ByKey = SettingsRegistry.ByKey
 
 local PANEL_NAME = "TankTrafficLightOptions"
-local PANEL_W, PANEL_H = 400, 786
-local BOX_X, BOX_W = 20, 360
+-- Two columns so the window fits a 768px-tall UI at scale 1:
+-- left = Traffic lights, right = Alerts / Show in / Diagnostics, buttons across the bottom.
+local BOX_W, COL_GAP, MARGIN = 360, 20, 20
+local LEFT_X, RIGHT_X = MARGIN, MARGIN + BOX_W + COL_GAP
+local PANEL_W, PANEL_H = MARGIN * 2 + BOX_W * 2 + COL_GAP, 500
 local BUTTON_W, BUTTON_GAP = 175, 10
+local BUTTONS_X = (PANEL_W - (BUTTON_W * 2 + BUTTON_GAP)) / 2 -- centred row
 local BACKDROP_TEMPLATE = BackdropTemplateMixin and "BackdropTemplate" or nil
 
 local panel
@@ -26,9 +30,9 @@ local function Row(region, parent, x, y)
     return region
 end
 
-local function NewBox(title, top, height)
+local function NewBox(title, x, top, height)
     local box = CreateFrame("Frame", nil, panel, BACKDROP_TEMPLATE)
-    box:SetPoint("TOPLEFT", panel, "TOPLEFT", BOX_X, top)
+    box:SetPoint("TOPLEFT", panel, "TOPLEFT", x, top)
     box:SetSize(BOX_W, height)
     if box.SetBackdrop then
         box:SetBackdrop({
@@ -87,7 +91,7 @@ end
 local function NewButton(text, column, top, onClick)
     local b = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     b:SetSize(BUTTON_W, 22)
-    b:SetPoint("TOPLEFT", panel, "TOPLEFT", BOX_X + (column - 1) * (BUTTON_W + BUTTON_GAP), top)
+    b:SetPoint("TOPLEFT", panel, "TOPLEFT", BUTTONS_X + (column - 1) * (BUTTON_W + BUTTON_GAP), top)
     if text then b:SetText(text) end
     b:SetScript("OnClick", onClick)
     return b
@@ -141,7 +145,7 @@ local function CreatePanel()
         "GameFontDisableSmall"):SetPoint("TOP", panel, "TOP", 0, -32)
 
     -- Traffic lights --------------------------------------------------------
-    local lights = NewBox("Traffic lights", -70, 258)
+    local lights = NewBox("Traffic lights", LEFT_X, -70, 258)
     Row(NewCheck(lights, ByKey.lights), lights, 12, -20)
     Row(NewCheck(lights, ByKey.tankOnly), lights, 12, -46)
     Row(NewCheck(lights, ByKey.pulse), lights, 12, -72)
@@ -163,7 +167,7 @@ local function CreatePanel()
     widgets.topOffset = Row(NewEditBox(lights, 40, ByKey.topOffset), lights, 256, -236)
 
     -- Alerts ----------------------------------------------------------------
-    local alerts = NewBox("Alerts", -356, 122)
+    local alerts = NewBox("Alerts", RIGHT_X, -70, 122)
     Row(NewCheck(alerts, ByKey.slipSound), alerts, 12, -20)
     widgets.slipSoundName = Row(CycleButton(alerts, ByKey.slipSoundName), alerts, 262, -20)
     Row(NewCheck(alerts, ByKey.healerSound), alerts, 12, -46)
@@ -176,23 +180,23 @@ local function CreatePanel()
     test:SetScript("OnClick", function() TT.Alerts.Test() end)
 
     -- Where -----------------------------------------------------------------
-    local where = NewBox("Show in", -506, 124)
+    local where = NewBox("Show in", RIGHT_X, -220, 124)
     Row(NewCheck(where, ByKey.showWorld), where, 12, -20)
     Row(NewCheck(where, ByKey.showDungeon), where, 12, -46)
     Row(NewCheck(where, ByKey.showRaid), where, 12, -72)
     Row(NewCheck(where, ByKey.showPvP), where, 12, -98)
 
     -- Diagnostics -----------------------------------------------------------
-    local diag = NewBox("Diagnostics", -658, 72)
+    local diag = NewBox("Diagnostics", RIGHT_X, -372, 72)
     Row(NewCheck(diag, ByKey.trace), diag, 12, -20)
     Row(NewCheck(diag, ByKey.autoProbe), diag, 12, -46)
 
     -- Buttons ---------------------------------------------------------------
-    widgets.demo = NewButton(nil, 1, -746, function()
+    widgets.demo = NewButton(nil, 1, -462, function()
         TT.Lights.SetDemo(not TT.Lights.IsDemo())
         TT.RefreshOptions()
     end)
-    NewButton("Reset all settings", 2, -746, function() TT.ResetSettings() end)
+    NewButton("Reset all settings", 2, -462, function() TT.ResetSettings() end)
 end
 
 function TT.RefreshOptions()

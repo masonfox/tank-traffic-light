@@ -46,3 +46,4 @@
 - [x] 8.3 Add an optional `onChange` hook to registry entries, called by `Settings.Set` after a successful change, and use it to preview the new sound. Verify statically: both the window button and slash route through `Settings.Set`/`Cycle`.
 - [x] 8.4 Add a sound cycle button next to each sound checkbox in the Alerts box, refresh their text in `TT.RefreshOptions`, and resize the box and panel. Verify: the window layout code positions the new controls without overlapping existing rows (in-game look checked under 5.1).
 - [x] 8.5 Re-run the Lua syntax check on all files and `openspec validate tank-alerts-and-group-awareness --strict`. Verify: both pass.
+- [x] 8.6 Lay out the options window in two columns so it fits a 768px-tall UI at scale 1. Verify: the layout code keeps both columns and the button row inside the panel without overlap (in-game look checked under 5.1).
