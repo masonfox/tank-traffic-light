@@ -1,6 +1,8 @@
 -- Tank Traffic Light options window (/ttl, or Options -> AddOns -> Tank Traffic Light).
 
 local _, TT = ...
+local SettingsRegistry = TT.Settings
+local ByKey = SettingsRegistry.ByKey
 
 local PANEL_NAME = "TankTrafficLightOptions"
 local PANEL_W, PANEL_H = 400, 586
@@ -42,37 +44,44 @@ local function NewBox(title, top, height)
     return box
 end
 
-local function NewCheck(parent, text, dbKey, onChange)
+local function NewCheck(parent, entry)
     local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
     cb:SetSize(26, 26)
-    local fs = Label(parent, text)
+    local fs = Label(parent, entry.label)
     fs:SetPoint("LEFT", cb, "RIGHT", 2, 1)
     cb:SetHitRectInsets(0, -(fs:GetStringWidth() + 6), 0, 0) -- label is clickable too
     cb:SetScript("OnClick", function(self)
-        TankTrafficLightDB[dbKey] = self:GetChecked() and true or false
-        if onChange then onChange() end
-        TT.Lights.UpdateAll()
+        SettingsRegistry.Set(entry.key, self:GetChecked() and true or false)
     end)
-    cb.Refresh = function(self) self:SetChecked(TankTrafficLightDB[dbKey] and true or false) end
+    cb.Refresh = function(self) self:SetChecked(TankTrafficLightDB[entry.key] and true or false) end
     widgets.checks[#widgets.checks + 1] = cb
     return cb
 end
 
 -- Value applied on Enter or focus loss; Esc cancels.
-local function NewEditBox(parent, width, onCommit)
+local function NewEditBox(parent, width, entry)
     local eb = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
     eb:SetSize(width, 20)
     eb:SetAutoFocus(false)
-    eb:SetMaxLetters(4)
     eb:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
     eb:SetScript("OnEscapePressed", function(self) self.cancel = true; self:ClearFocus() end)
     eb:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
     eb:SetScript("OnEditFocusLost", function(self)
         self:HighlightText(0, 0)
-        if self.cancel then self.cancel = nil else onCommit(self:GetText()) end
+        if self.cancel then
+            self.cancel = nil
+        else
+            local ok, message = SettingsRegistry.Set(entry.key, self:GetText())
+            if ok then return end
+            TT.Print(message)
+        end
         TT.RefreshOptions()
     end)
     return eb
+end
+
+local function NumberLabel(entry)
+    return string.format("%s (%s - %s):", entry.label, entry.min, entry.max)
 end
 
 local function NewButton(text, column, top, onClick)
@@ -121,73 +130,49 @@ local function CreatePanel()
 
     -- Traffic lights --------------------------------------------------------
     local lights = NewBox("Traffic lights", -70, 198)
-    Row(NewCheck(lights, "Show traffic lights on enemy nameplates", "lights"), lights, 12, -20)
-    Row(NewCheck(lights, "Only when my role is tank (or no role set)", "tankOnly"), lights, 12, -46)
-    Row(NewCheck(lights, "Pulse the yellow light when aggro is slipping", "pulse"), lights, 12, -72)
+    Row(NewCheck(lights, ByKey.lights), lights, 12, -20)
+    Row(NewCheck(lights, ByKey.tankOnly), lights, 12, -46)
+    Row(NewCheck(lights, ByKey.pulse), lights, 12, -72)
 
-    Row(Label(lights, "Placement on the nameplate:"), lights, 16, -106)
+    Row(Label(lights, ByKey.side.label .. ":"), lights, 16, -106)
     widgets.side = CreateFrame("Button", nil, lights, "UIPanelButtonTemplate")
     widgets.side:SetSize(90, 22)
     Row(widgets.side, lights, 250, -106)
     widgets.side:SetScript("OnClick", function()
-        local nextSide = { left = "right", right = "top", top = "left" }
-        TankTrafficLightDB.side = nextSide[TankTrafficLightDB.side] or "left"
-        TT.Lights.UpdateAll()
-        TT.RefreshOptions()
+        SettingsRegistry.Cycle(ByKey.side.key)
     end)
 
-    Row(Label(lights, "Size (0.5 - 3):"), lights, 16, -140)
-    widgets.scale = Row(NewEditBox(lights, 40, function(text)
-        local n = tonumber((text:gsub(",", ".")))
-        if n and n >= 0.5 and n <= 3 then
-            TankTrafficLightDB.lightScale = n
-            TT.Lights.UpdateAll()
-        else
-            TT.Print("size must be a number from 0.5 to 3")
-        end
-    end), lights, 256, -140)
+    Row(Label(lights, NumberLabel(ByKey.lightScale)), lights, 16, -140)
+    widgets.scale = Row(NewEditBox(lights, 40, ByKey.lightScale), lights, 256, -140)
 
-    Row(Label(lights, "Top placement height (0 - 60):"), lights, 16, -168)
-    widgets.topOffset = Row(NewEditBox(lights, 40, function(text)
-        local n = tonumber(text)
-        if n and n >= 0 and n <= 60 then
-            TankTrafficLightDB.topOffset = n
-            TT.Lights.UpdateAll()
-        else
-            TT.Print("height must be a number from 0 to 60")
-        end
-    end), lights, 256, -168)
+    Row(Label(lights, NumberLabel(ByKey.topOffset)), lights, 16, -168)
+    widgets.topOffset = Row(NewEditBox(lights, 40, ByKey.topOffset), lights, 256, -168)
 
     -- Where -----------------------------------------------------------------
     local where = NewBox("Show in", -296, 124)
-    Row(NewCheck(where, "Open world", "showWorld"), where, 12, -20)
-    Row(NewCheck(where, "Dungeons", "showDungeon"), where, 12, -46)
-    Row(NewCheck(where, "Raids", "showRaid"), where, 12, -72)
-    Row(NewCheck(where, "Battlegrounds and arenas", "showPvP"), where, 12, -98)
+    Row(NewCheck(where, ByKey.showWorld), where, 12, -20)
+    Row(NewCheck(where, ByKey.showDungeon), where, 12, -46)
+    Row(NewCheck(where, ByKey.showRaid), where, 12, -72)
+    Row(NewCheck(where, ByKey.showPvP), where, 12, -98)
 
     -- Diagnostics -----------------------------------------------------------
     local diag = NewBox("Diagnostics", -448, 72)
-    Row(NewCheck(diag, "Print every light change to chat (/ttl trace)", "trace"), diag, 12, -20)
-    Row(NewCheck(diag, "Record an API probe 3s into every pull", "autoProbe"), diag, 12, -46)
+    Row(NewCheck(diag, ByKey.trace), diag, 12, -20)
+    Row(NewCheck(diag, ByKey.autoProbe), diag, 12, -46)
 
     -- Buttons ---------------------------------------------------------------
     widgets.demo = NewButton(nil, 1, -536, function()
         TT.Lights.SetDemo(not TT.Lights.IsDemo())
         TT.RefreshOptions()
     end)
-    NewButton("Reset all settings", 2, -536, function()
-        TT.ResetAll()
-        TT.Lights.UpdateAll()
-        TT.RefreshOptions()
-        TT.Print("settings reset")
-    end)
+    NewButton("Reset all settings", 2, -536, function() TT.ResetSettings() end)
 end
 
 function TT.RefreshOptions()
     if not panel then return end
     for _, cb in ipairs(widgets.checks) do cb:Refresh() end
-    local sideLabels = { left = "Left", right = "Right", top = "Top" }
-    widgets.side:SetText(sideLabels[TankTrafficLightDB.side] or "Left")
+    local side = ByKey.side
+    widgets.side:SetText(side.labels[TankTrafficLightDB.side] or side.labels[side.values[1]])
     widgets.scale:SetText(tostring(TankTrafficLightDB.lightScale))
     widgets.topOffset:SetText(tostring(TankTrafficLightDB.topOffset))
     widgets.demo:SetText(TT.Lights.IsDemo() and "Stop demo" or "Demo: cycle colors")

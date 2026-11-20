@@ -1,4 +1,5 @@
 local ADDON_NAME, TT = ...
+local Settings = TT.Settings
 
 function TT.Print(text) print("|cff66ccffTank Traffic Light|r " .. text) end
 local Say = TT.Print
@@ -28,6 +29,13 @@ function TT.ResetAll()
     for k, v in pairs(TT.DEFAULTS) do TankTrafficLightDB[k] = v end
 end
 
+function TT.ResetSettings()
+    TT.ResetAll()
+    TT.Lights.UpdateAll()
+    TT.RefreshOptions()
+    Say("settings reset")
+end
+
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, _, name)
@@ -36,22 +44,59 @@ loader:SetScript("OnEvent", function(self, _, name)
     TankTrafficLightDB.probeLog = TankTrafficLightDB.probeLog or {}
     TankTrafficLightDB.traceLog = TankTrafficLightDB.traceLog or {}
     ApplyDefaults()
+    Settings.CheckDefaults()
     self:UnregisterEvent("ADDON_LOADED")
 end)
 
 local function OnOff(v) return v and "ON" or "OFF" end
 
+local function RunSetting(entry, arg)
+    local key = entry.key
+    if entry.kind == "toggle" then
+        return Settings.Set(key, not TankTrafficLightDB[key])
+    elseif entry.kind == "choice" and arg == "" then
+        return Settings.Cycle(key)
+    end
+    return Settings.Set(key, arg)
+end
+
+local function PrintHelp()
+    Say("commands:")
+    for _, section in ipairs(Settings.Sections) do
+        local commands = {}
+        for _, entry in ipairs(Settings.Entries) do
+            if entry.section == section then
+                local usage = table.concat(entry.slash, "|")
+                if entry.kind == "number" then
+                    usage = usage .. string.format(" <%s-%s>", entry.min, entry.max)
+                elseif entry.kind == "choice" then
+                    usage = usage .. " [" .. table.concat(entry.values, "|") .. "]"
+                end
+                commands[#commands + 1] = usage
+            end
+        end
+        if section == "Diagnostics" then
+            commands[#commands + 1] = "why"
+            commands[#commands + 1] = "probe"
+            commands[#commands + 1] = "clear"
+        end
+        Say(section .. ": /ttl " .. table.concat(commands, ", "))
+    end
+    Say("Actions: /ttl (or options|config) - toggle the options window, demo, reset")
+end
+
 SLASH_TANKTRAFFICLIGHT1 = "/tanktrafficlight"
 SLASH_TANKTRAFFICLIGHT2 = "/ttl"
 SlashCmdList.TANKTRAFFICLIGHT = function(msg)
-    local cmd, arg = strsplit(" ", strlower(strtrim(msg or "")), 2)
-    if cmd == "" or cmd == "options" or cmd == "config" then
+    local cmd, arg = (msg or ""):lower():match("^%s*(%S*)%s*(.-)%s*$")
+    local entry = Settings.BySlash[cmd]
+    if entry then
+        local _, message = RunSetting(entry, arg)
+        Say(message)
+    elseif cmd == "" or cmd == "options" or cmd == "config" then
         TT.ToggleOptions()
     elseif cmd == "probe" then
         TT.Probe.Run("manual")
-    elseif cmd == "auto" then
-        TankTrafficLightDB.autoProbe = not TankTrafficLightDB.autoProbe
-        Say("auto probe on combat start: " .. OnOff(TankTrafficLightDB.autoProbe))
     elseif cmd == "clear" then
         TankTrafficLightDB.probeLog = {}
         TankTrafficLightDB.traceLog = {}
@@ -62,36 +107,13 @@ SlashCmdList.TANKTRAFFICLIGHT = function(msg)
             local log = TankTrafficLightDB.traceLog
             log[#log + 1] = "WHY " .. line
         end)
-    elseif cmd == "trace" then
-        TankTrafficLightDB.trace = not TankTrafficLightDB.trace
-        Say("print every light color change to chat: " .. OnOff(TankTrafficLightDB.trace)
-            .. " (always saved to the log either way)")
-    elseif cmd == "lights" then
-        TankTrafficLightDB.lights = not TankTrafficLightDB.lights
-        TT.Lights.UpdateAll()
-        Say("nameplate traffic lights: " .. OnOff(TankTrafficLightDB.lights))
-    elseif cmd == "tankonly" then
-        TankTrafficLightDB.tankOnly = not TankTrafficLightDB.tankOnly
-        TT.Lights.UpdateAll()
-        Say("only show lights when in the tank role: " .. OnOff(TankTrafficLightDB.tankOnly))
-    elseif cmd == "scale" then
-        local n = tonumber(arg)
-        if n and n >= 0.5 and n <= 3 then
-            TankTrafficLightDB.lightScale = n
-            TT.Lights.UpdateAll()
-            Say("light scale: " .. n)
-        else
-            Say("usage: /ttl scale 0.5-3 (now " .. TankTrafficLightDB.lightScale .. ")")
-        end
     elseif cmd == "demo" then
         TT.Lights.SetDemo(not TT.Lights.IsDemo())
         Say("demo mode (cycles every visible nameplate): " .. OnOff(TT.Lights.IsDemo()))
+        TT.RefreshOptions()
+    elseif cmd == "reset" then
+        TT.ResetSettings()
     else
-        Say("commands:")
-        Say("  /ttl - open the options window")
-        Say("  /ttl lights | demo | tankonly | scale <0.5-3>")
-        Say("  /ttl why - explain each visible light")
-        Say("  /ttl trace | probe | auto | clear - diagnostics")
+        PrintHelp()
     end
-    TT.RefreshOptions()
 end
