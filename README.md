@@ -1,6 +1,6 @@
 # Tank Traffic Light
 
-A World of Warcraft addon that puts a small traffic light on enemy nameplates, so a tank can see at a glance which mobs are on them, which are slipping, and which are loose.
+A **WoW Forever** addon that puts a small traffic light on enemy nameplates, so a tank can see at a glance which mobs are on them, which are slipping, and which are loose.
 
 | Light | Meaning |
 |-------|---------|
@@ -19,7 +19,7 @@ A World of Warcraft addon that puts a small traffic light on enemy nameplates, s
 
 ## Install
 
-Copy this folder into `World of Warcraft/<client>/Interface/AddOns/` as `TankTrafficLight`, then restart the game or `/reload`.
+Built for the WoW Forever client only. Copy this folder into `World of Warcraft/_forever_/Interface/AddOns/` as `TankTrafficLight`, then restart the game or `/reload`.
 
 ## Usage
 
