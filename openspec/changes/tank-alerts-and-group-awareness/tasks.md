@@ -41,8 +41,8 @@
 
 ## 8. Configurable grey opacity and alert sounds
 
-- [ ] 8.1 Add the `greyAlpha` number entry (0.1 to 1, default 0.45, slash `greyalpha`/`grayalpha`, label "Grey light opacity"), use it in `Paint` instead of `GREY_ALPHA`, and add a field to the Traffic lights box. Verify: `/ttl greyalpha 2` prints the shared range message, and `/ttl greyalpha 0,2` is accepted.
-- [ ] 8.2 Add the shared `SOUNDS` list and the `slipSoundName` (default `ping`) and `healerSoundName` (default `raidwarning`) choice entries, with slash `slipsoundname`/`healersoundname`. Alerts and the test play the chosen sound, and a missing SOUNDKIT means silence. Verify: `/ttl healersoundname bell` sets it, and `/ttl foo` lists both commands with their choices.
-- [ ] 8.3 Add an optional `onChange` hook to registry entries, called by `Settings.Set` after a successful change, and use it to preview the new sound. Verify statically: both the window button and slash route through `Settings.Set`/`Cycle`.
-- [ ] 8.4 Add a sound cycle button next to each sound checkbox in the Alerts box, refresh their text in `TT.RefreshOptions`, and resize the box and panel. Verify: the window layout code positions the new controls without overlapping existing rows (in-game look checked under 5.1).
-- [ ] 8.5 Re-run the Lua syntax check on all files and `openspec validate tank-alerts-and-group-awareness --strict`. Verify: both pass.
+- [x] 8.1 Add the `greyAlpha` number entry (0.1 to 1, default 0.45, slash `greyalpha`/`grayalpha`, label "Grey light opacity"), use it in `Paint` instead of `GREY_ALPHA`, and add a field to the Traffic lights box. Verify: `/ttl greyalpha 2` prints the shared range message, and `/ttl greyalpha 0,2` is accepted.
+- [x] 8.2 Add the shared `SOUNDS` list and the `slipSoundName` (default `ping`) and `healerSoundName` (default `raidwarning`) choice entries, with slash `slipsoundname`/`healersoundname`. Alerts and the test play the chosen sound, and a missing SOUNDKIT means silence. Verify: `/ttl healersoundname bell` sets it, and `/ttl foo` lists both commands with their choices.
+- [x] 8.3 Add an optional `onChange` hook to registry entries, called by `Settings.Set` after a successful change, and use it to preview the new sound. Verify statically: both the window button and slash route through `Settings.Set`/`Cycle`.
+- [x] 8.4 Add a sound cycle button next to each sound checkbox in the Alerts box, refresh their text in `TT.RefreshOptions`, and resize the box and panel. Verify: the window layout code positions the new controls without overlapping existing rows (in-game look checked under 5.1).
+- [x] 8.5 Re-run the Lua syntax check on all files and `openspec validate tank-alerts-and-group-awareness --strict`. Verify: both pass.
