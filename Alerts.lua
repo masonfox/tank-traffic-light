@@ -11,10 +11,6 @@ local SLIP_THROTTLE = 2          -- seconds between slipping sounds, across all 
 local HEALER_THROTTLE = 1.5      -- seconds between mob-on-healer alerts, across all mobs
 local HEALER_MOB_THROTTLE = 5    -- seconds before the same mob can alert again
 
--- Built-in sounds, first one present on this client wins. Missing = silent.
-local SLIP_SOUNDS = { "IG_PLAYER_INVITE", "TELL_MESSAGE" }
-local HEALER_SOUNDS = { "RAID_WARNING", "READY_CHECK" }
-
 local HEALER_CLASSES = { PRIEST = true, DRUID = true, PALADIN = true, SHAMAN = true }
 local GENERIC_TEXT = "Mob on your healer!"
 
@@ -45,18 +41,23 @@ end
 -- Sounds
 ---------------------------------------------------------------------------
 
-local function SoundId(names)
+-- Sound choice (a TT.SOUNDS key) -> SOUNDKIT id, or nil if missing on this client.
+local function SoundId(choice)
+    local name = TT.SOUNDS and TT.SOUNDS[choice]
+    if type(name) ~= "string" then return nil end
     if not S.Public(SOUNDKIT) or type(SOUNDKIT) ~= "table" then return nil end
-    for _, name in ipairs(names) do
-        local ok, id = pcall(function() return SOUNDKIT[name] end)
-        if ok and S.Public(id) and type(id) == "number" then return id end
-    end
+    local ok, id = pcall(function() return SOUNDKIT[name] end)
+    if ok and S.Public(id) and type(id) == "number" then return id end
 end
 
-local function Play(names)
-    local id = SoundId(names)
-    if id then S.Call(PlaySound, id, "Master") end
+-- Play a sound choice once; a missing sound is silent, never an error.
+function A.PlayChoice(choice)
+    local ok, id = pcall(SoundId, choice)
+    if ok and id then S.Call(PlaySound, id, "Master") end
 end
+local Play = A.PlayChoice
+local function SlipSound() return TankTrafficLightDB.slipSoundName or "ping" end
+local function HealerSound() return TankTrafficLightDB.healerSoundName or "raidwarning" end
 
 ---------------------------------------------------------------------------
 -- Flash: red screen-edge glow plus center text, click-through
@@ -176,7 +177,7 @@ local function OnHealer(unit, target, now)
     if lastHealer and now - lastHealer < HEALER_THROTTLE then return end
     lastHealer = now
     if mobGuid then mobLastAlert[mobGuid] = now end
-    if db.healerSound then Play(HEALER_SOUNDS) end
+    if db.healerSound then Play(HealerSound()) end
     if db.healerFlash then ShowFlash(HealerText(unit, target)) end
 end
 
@@ -189,7 +190,7 @@ function A.OnState(unit, frame, old, new)
     if new == States.YELLOW and old ~= States.YELLOW and TankTrafficLightDB.slipSound and now then
         if not lastSlip or now - lastSlip >= SLIP_THROTTLE then
             lastSlip = now
-            Play(SLIP_SOUNDS)
+            Play(SlipSound())
         end
     end
 
@@ -207,9 +208,9 @@ end
 
 -- Test: both sounds and the flash, ignoring settings, throttles and gating.
 function A.Test()
-    pcall(Play, SLIP_SOUNDS)
+    pcall(Play, SlipSound())
     local function Second()
-        pcall(Play, HEALER_SOUNDS)
+        pcall(Play, HealerSound())
         pcall(ShowFlash, "Skeleton -> Priestly (test)")
     end
     if C_Timer and C_Timer.After then
