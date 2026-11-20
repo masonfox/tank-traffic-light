@@ -20,7 +20,7 @@ local function PreviewSound(value)
 end
 
 local Settings = {
-    Sections = { "Traffic lights", "Alerts", "Show in", "Diagnostics" },
+    Sections = { "Traffic lights", "Mob list", "Alerts", "Show in", "Diagnostics" },
     Entries = {
         { key = "lights", kind = "toggle", label = "Show traffic lights on enemy nameplates",
             section = "Traffic lights", slash = { "lights" } },
@@ -42,6 +42,14 @@ local Settings = {
             section = "Traffic lights", slash = { "scale", "size" }, min = 0.5, max = 3 },
         { key = "topOffset", kind = "number", label = "Top placement height", name = "top placement height",
             section = "Traffic lights", slash = { "height" }, min = 0, max = 60 },
+        { key = "mobList", kind = "toggle", label = "Show the mob list",
+            section = "Mob list", slash = { "list" } },
+        { key = "listMinimized", kind = "toggle", label = "Minimize the mob list",
+            section = "Mob list", slash = { "listmin" } },
+        { key = "listLocked", kind = "toggle", label = "Lock the mob list",
+            section = "Mob list", slash = { "listlock" } },
+        { key = "listRows", kind = "number", label = "Maximum rows", name = "maximum rows",
+            section = "Mob list", slash = { "listrows" }, min = 3, max = 20, integer = true },
         { key = "slipSound", kind = "toggle", label = "Sound when aggro starts slipping",
             section = "Alerts", slash = { "slipsound" } },
         { key = "slipSoundName", kind = "choice", label = "Slipping sound",
@@ -82,7 +90,9 @@ end
 local function ParseNumber(entry, raw)
     if type(raw) == "string" then raw = raw:gsub(",", ".") end
     local value = tonumber(raw)
-    if value and value >= entry.min and value <= entry.max then return value end
+    if not value or value < entry.min or value > entry.max then return nil end
+    if entry.integer and value % 1 ~= 0 then return nil end
+    return value
 end
 
 function Settings.Set(key, raw)
@@ -96,8 +106,9 @@ function Settings.Set(key, raw)
     elseif entry.kind == "number" then
         value = ParseNumber(entry, raw)
         if value == nil then
-            return false, string.format("%s must be a number from %s to %s (now %s)",
-                entry.name, entry.min, entry.max, tostring(TankTrafficLightDB[key]))
+            return false, string.format("%s must be %s from %s to %s (now %s)",
+                entry.name, entry.integer and "a whole number" or "a number",
+                entry.min, entry.max, tostring(TankTrafficLightDB[key]))
         end
         display = value
     elseif entry.kind == "choice" then
@@ -110,6 +121,7 @@ function Settings.Set(key, raw)
 
     TankTrafficLightDB[key] = value
     TT.Lights.UpdateAll()
+    TT.MobList.Refresh() -- lock, minimize, row cap and palette change the list without reclassifying
     TT.RefreshOptions()
     if entry.onChange then pcall(entry.onChange, value) end -- optional per-entry hook (e.g. sound preview)
     return true, entry.label .. ": " .. display

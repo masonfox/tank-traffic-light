@@ -14,6 +14,10 @@ TT.DEFAULTS = {
     side = "left",
     lightScale = 1,
     topOffset = 4,
+    mobList = true,
+    listMinimized = false,
+    listLocked = true,
+    listRows = 8,
     showWorld = true,
     showDungeon = true,
     showRaid = true,
@@ -35,11 +39,14 @@ end
 
 function TT.ResetAll()
     for k, v in pairs(TT.DEFAULTS) do TankTrafficLightDB[k] = v end
+    TankTrafficLightDB.listPos = nil -- not a registry setting: no window control or slash command
+    TT.MobList.ApplyPosition()
 end
 
 function TT.ResetSettings()
     TT.ResetAll()
     TT.Lights.UpdateAll()
+    TT.MobList.Refresh()
     TT.RefreshOptions()
     Say("settings reset")
 end
@@ -53,6 +60,8 @@ loader:SetScript("OnEvent", function(self, _, name)
     TankTrafficLightDB.traceLog = TankTrafficLightDB.traceLog or {}
     ApplyDefaults()
     Settings.CheckDefaults()
+    TT.MobList.ApplyPosition()
+    TT.MobList.Refresh()
     self:UnregisterEvent("ADDON_LOADED")
 end)
 

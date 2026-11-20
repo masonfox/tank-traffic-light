@@ -6,10 +6,10 @@ local ByKey = SettingsRegistry.ByKey
 
 local PANEL_NAME = "TankTrafficLightOptions"
 -- Two columns so the window fits a 768px-tall UI at scale 1:
--- left = Traffic lights, right = Alerts / Show in / Diagnostics, buttons across the bottom.
+-- left = Traffic lights / Mob list, right = Alerts / Show in / Diagnostics, buttons across the bottom.
 local BOX_W, COL_GAP, MARGIN = 360, 20, 20
 local LEFT_X, RIGHT_X = MARGIN, MARGIN + BOX_W + COL_GAP
-local PANEL_W, PANEL_H = MARGIN * 2 + BOX_W * 2 + COL_GAP, 500
+local PANEL_W, PANEL_H = MARGIN * 2 + BOX_W * 2 + COL_GAP, 532
 local BUTTON_W, BUTTON_GAP = 175, 10
 local BUTTONS_X = (PANEL_W - (BUTTON_W * 2 + BUTTON_GAP)) / 2 -- centred row
 local BACKDROP_TEMPLATE = BackdropTemplateMixin and "BackdropTemplate" or nil
@@ -122,6 +122,9 @@ local function CreatePanel()
     panel:SetScript("OnDragStart", panel.StartMoving)
     panel:SetScript("OnDragStop", panel.StopMovingOrSizing)
     panel:Hide()
+    -- The mob list stays visible while this window is open (see MobList.lua).
+    panel:SetScript("OnShow", function() TT.MobList.Refresh() end)
+    panel:SetScript("OnHide", function() TT.MobList.Refresh() end)
     table.insert(UISpecialFrames, PANEL_NAME) -- close with Esc
     if panel.SetBackdrop then
         panel:SetBackdrop({
@@ -166,6 +169,14 @@ local function CreatePanel()
     Row(Label(lights, NumberLabel(ByKey.topOffset)), lights, 16, -236)
     widgets.topOffset = Row(NewEditBox(lights, 40, ByKey.topOffset), lights, 256, -236)
 
+    -- Mob list --------------------------------------------------------------
+    local list = NewBox("Mob list", LEFT_X, -356, 124)
+    Row(NewCheck(list, ByKey.mobList), list, 12, -20)
+    Row(NewCheck(list, ByKey.listMinimized), list, 12, -46)
+    Row(NewCheck(list, ByKey.listLocked), list, 12, -72)
+    Row(Label(list, NumberLabel(ByKey.listRows)), list, 16, -100)
+    widgets.listRows = Row(NewEditBox(list, 40, ByKey.listRows), list, 256, -100)
+
     -- Alerts ----------------------------------------------------------------
     local alerts = NewBox("Alerts", RIGHT_X, -70, 122)
     Row(NewCheck(alerts, ByKey.slipSound), alerts, 12, -20)
@@ -192,11 +203,11 @@ local function CreatePanel()
     Row(NewCheck(diag, ByKey.autoProbe), diag, 12, -46)
 
     -- Buttons ---------------------------------------------------------------
-    widgets.demo = NewButton(nil, 1, -462, function()
+    widgets.demo = NewButton(nil, 1, -494, function()
         TT.Lights.SetDemo(not TT.Lights.IsDemo())
         TT.RefreshOptions()
     end)
-    NewButton("Reset all settings", 2, -462, function() TT.ResetSettings() end)
+    NewButton("Reset all settings", 2, -494, function() TT.ResetSettings() end)
 end
 
 function TT.RefreshOptions()
@@ -209,7 +220,12 @@ function TT.RefreshOptions()
     widgets.greyAlpha:SetText(tostring(TankTrafficLightDB.greyAlpha))
     widgets.scale:SetText(tostring(TankTrafficLightDB.lightScale))
     widgets.topOffset:SetText(tostring(TankTrafficLightDB.topOffset))
+    widgets.listRows:SetText(tostring(TankTrafficLightDB.listRows))
     widgets.demo:SetText(TT.Lights.IsDemo() and "Stop demo" or "Demo: cycle colors")
+end
+
+function TT.IsOptionsShown()
+    return panel ~= nil and panel:IsShown()
 end
 
 function TT.ToggleOptions(forceShow)
