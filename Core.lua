@@ -12,8 +12,9 @@ TT.DEFAULTS = {
     greyAlpha = 0.45,
     palette = "classic",
     side = "left",
+    align = "middle",
     lightScale = 1,
-    topOffset = 4,
+    gap = 4,
     mobList = true,
     listMinimized = false,
     listLocked = true,
@@ -30,6 +31,14 @@ TT.DEFAULTS = {
     trace = false,
     autoProbe = false,
 }
+
+-- Earlier versions saved a top-only height; it becomes the gap for every placement.
+-- Runs before ApplyDefaults, or the default gap would replace the saved height.
+local function MigrateSettings()
+    local db = TankTrafficLightDB
+    if db.gap == nil and db.topOffset ~= nil then db.gap = db.topOffset end
+    db.topOffset = nil
+end
 
 local function ApplyDefaults()
     for k, v in pairs(TT.DEFAULTS) do
@@ -58,14 +67,13 @@ loader:SetScript("OnEvent", function(self, _, name)
     TankTrafficLightDB = TankTrafficLightDB or {}
     TankTrafficLightDB.probeLog = TankTrafficLightDB.probeLog or {}
     TankTrafficLightDB.traceLog = TankTrafficLightDB.traceLog or {}
+    MigrateSettings()
     ApplyDefaults()
     Settings.CheckDefaults()
     TT.MobList.ApplyPosition()
     TT.MobList.Refresh()
     self:UnregisterEvent("ADDON_LOADED")
 end)
-
-local function OnOff(v) return v and "ON" or "OFF" end
 
 local function RunSetting(entry, arg)
     local key = entry.key
@@ -102,7 +110,7 @@ local function PrintHelp()
         end
         Say(section .. ": /ttl " .. table.concat(commands, ", "))
     end
-    Say("Actions: /ttl (or options|config) - toggle the options window, demo, reset")
+    Say("Actions: /ttl (or options|config) - toggle the options window, reset")
 end
 
 SLASH_TANKTRAFFICLIGHT1 = "/tanktrafficlight"
@@ -130,10 +138,6 @@ SlashCmdList.TANKTRAFFICLIGHT = function(msg)
     elseif cmd == "testalert" then
         TT.Alerts.Test()
         Say("testing alerts: slipping sound, then healer sound and flash")
-    elseif cmd == "demo" then
-        TT.Lights.SetDemo(not TT.Lights.IsDemo())
-        Say("demo mode (cycles every visible nameplate): " .. OnOff(TT.Lights.IsDemo()))
-        TT.RefreshOptions()
     elseif cmd == "reset" then
         TT.ResetSettings()
     else

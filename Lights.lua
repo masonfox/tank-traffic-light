@@ -6,8 +6,8 @@ TT.Lights = L
 -- Traffic light states. GREY = "a light, but not yours" (stranger or co-tank).
 local GREEN, YELLOW, RED, GREY = "green", "yellow", "red", "grey"
 TT.States = { GREEN = GREEN, YELLOW = YELLOW, RED = RED, GREY = GREY }
+L.STATES = TT.States -- same table; the preview paints each state with L.Paint
 local ORDER = { RED, YELLOW, GREEN } -- lamps top to bottom, like a real light
-local DEMO_ORDER = { RED, YELLOW, GREEN, GREY }
 
 -- Lit-lamp colors per palette. Colorblind is Okabe-Ito (vermilion / yellow / blue),
 -- brightened a little so it stands out against the dark housing.
@@ -29,8 +29,6 @@ local LAMP_GAP = 1
 local CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 
 local lights = {}         -- unit token -> light frame
-local demoMode = false
-local demoStep = 0
 
 ---------------------------------------------------------------------------
 -- Reading the situation (every read is guarded against secret values)
@@ -160,7 +158,7 @@ local function AnchorTarget(plate)
     return plate
 end
 
--- Stand the light up (left/right of the bar) or lay it on its side (top).
+-- Stand the light up (left/right of the bar) or lay it on its side (top/bottom).
 local function Layout(f, horizontal)
     if f.horizontal == horizontal then return end
     f.horizontal = horizontal
@@ -179,9 +177,10 @@ local function Layout(f, horizontal)
     end
 end
 
-local function CreateLight(plate)
-    local f = CreateFrame("Frame", nil, plate)
-    f:SetFrameLevel(plate:GetFrameLevel() + 20)
+-- Builds one light (housing, masked lamps, pulse). Used for nameplates and the preview.
+function L.NewLight(parent)
+    local f = CreateFrame("Frame", nil, parent)
+    f:SetFrameLevel(parent:GetFrameLevel() + 20)
 
     local housing = f:CreateTexture(nil, "BACKGROUND")
     housing:SetAllPoints()
@@ -211,12 +210,39 @@ local function CreateLight(plate)
     return f
 end
 
+-- Anchor points per placement side (design Decision 2). "%s" takes the alignment
+-- suffix; x/y are the gap's sign: light point, bar point, x sign, y sign.
+local PLACEMENT = {
+    top    = { "BOTTOM%s", "TOP%s",    0,  1 },
+    bottom = { "TOP%s",    "BOTTOM%s", 0, -1 },
+    left   = { "RIGHT",    "LEFT",    -1,  0 },
+    right  = { "LEFT",     "RIGHT",    1,  0 },
+}
+local ALIGN_SUFFIX = { left = "LEFT", middle = "", right = "RIGHT" }
+
+-- Orients, anchors and scales a light against a bar (health bar, or the plate
+-- itself). Shared by the nameplate lights and the options preview.
+function L.Place(f, bar)
+    local db = TankTrafficLightDB
+    local side = db.side or "left"
+    local p = PLACEMENT[side]
+    if not p then side, p = "left", PLACEMENT.left end
+    local suffix = ALIGN_SUFFIX[db.align or "middle"] or ""
+    local gap = tonumber(db.gap) or 4
+    Layout(f, side == "top" or side == "bottom")
+    f:ClearAllPoints()
+    -- Anchor to the health bar, not the name text: Plater can hide or
+    -- un-anchor its name label, which would leave the light with no position.
+    f:SetPoint(p[1]:format(suffix), bar, p[2]:format(suffix), p[3] * gap, p[4] * gap)
+    f:SetScale(tonumber(db.lightScale) or 1)
+end
+
 -- Current palette: state -> { r, g, b }. Shared with the mob list.
 function L.Colors()
     return PALETTES[TankTrafficLightDB.palette] or PALETTES.classic
 end
 
-local function Paint(f, state)
+function L.Paint(f, state)
     local colors = L.Colors()
     for lampState, lamp in pairs(f.lamps) do
         local c = colors[lampState]
@@ -247,7 +273,7 @@ local function Attach(unit)
     if not plate then return end
     local f = plate.TankTrafficLightFrame
     if not f then
-        f = CreateLight(plate)
+        f = L.NewLight(plate)
         plate.TankTrafficLightFrame = f
     end
     local okGuid, guid = Read(UnitGUID, unit)
@@ -258,19 +284,7 @@ local function Attach(unit)
         f.pulse:Stop()
         f:SetAlpha(1)
     end
-    local side = TankTrafficLightDB.side
-    Layout(f, side == "top")
-    f:ClearAllPoints()
-    if side == "top" then
-        -- Anchor to the health bar, not the name text: Plater can hide or
-        -- un-anchor its name label, which would leave the light with no position.
-        f:SetPoint("BOTTOM", AnchorTarget(plate), "TOP", 0, TankTrafficLightDB.topOffset or 4)
-    elseif side == "right" then
-        f:SetPoint("LEFT", AnchorTarget(plate), "RIGHT", 4, 0)
-    else
-        f:SetPoint("RIGHT", AnchorTarget(plate), "LEFT", -4, 0)
-    end
-    f:SetScale(TankTrafficLightDB.lightScale or 1)
+    L.Place(f, AnchorTarget(plate))
     lights[unit] = f
     return f
 end
@@ -333,9 +347,7 @@ function L.Update(unit)
     end
     local state, why
     local classified = false
-    if demoMode then
-        state = DEMO_ORDER[(demoStep % #DEMO_ORDER) + 1]
-    elseif ShouldClassify() then
+    if ShouldClassify() then
         classified = true
         state, why = L.StateFor(unit)
         if state ~= f.state then Trace(unit, f.state, state, why) end
@@ -353,8 +365,8 @@ function L.Update(unit)
         ListRemove(unit)
     end
     f.state = state
-    if state and (lightsOn or demoMode) then
-        Paint(f, state)
+    if state and lightsOn then
+        L.Paint(f, state)
         f:Show()
     else
         f.pulse:Stop()
@@ -371,19 +383,11 @@ function L.UpdateAll()
     end
 end
 
-function L.SetDemo(on)
-    demoMode = on
-    L.UpdateAll()
-    if TT.MobList and TT.MobList.SetDemo then pcall(TT.MobList.SetDemo, on) end
-end
-
-function L.IsDemo() return demoMode end
-
 -- Prints, for every visible nameplate, what the light decided and why.
 function L.Explain(say)
     say("lights=" .. tostring(TankTrafficLightDB.lights) .. " list=" .. tostring(TankTrafficLightDB.mobList)
         .. " tankOnly=" .. tostring(TankTrafficLightDB.tankOnly) .. " allowed=" .. tostring(Allowed())
-        .. " classify=" .. tostring(ShouldClassify()) .. " demo=" .. tostring(demoMode))
+        .. " classify=" .. tostring(ShouldClassify()))
     local count = 0
     for i = 1, 40 do
         local unit = "nameplate" .. i
@@ -434,19 +438,10 @@ events:SetScript("OnEvent", function(_, event, unit)
 end)
 
 -- Safety net: targets and threat can shift without an event we see,
--- so refresh a few times a second while in combat (or demoing).
-local elapsedTotal, demoElapsed = 0, 0
+-- so refresh a few times a second while in combat. Out of combat this does nothing.
+local elapsedTotal = 0
 events:SetScript("OnUpdate", function(_, elapsed)
     if not TankTrafficLightDB then return end
-    if demoMode then
-        demoElapsed = demoElapsed + elapsed
-        if demoElapsed >= 1 then
-            demoElapsed = 0
-            demoStep = demoStep + 1
-            L.UpdateAll()
-        end
-        return
-    end
     if not InCombatLockdown() then return end
     elapsedTotal = elapsedTotal + elapsed
     if elapsedTotal >= 0.25 then
