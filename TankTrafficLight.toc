@@ -11,5 +11,6 @@ Probe.lua
 Alerts.lua
 MobList.lua
 Lights.lua
+Preview.lua
 Options.lua
 Core.lua

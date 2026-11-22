@@ -5,17 +5,19 @@ local SettingsRegistry = TT.Settings
 local ByKey = SettingsRegistry.ByKey
 
 local PANEL_NAME = "TankTrafficLightOptions"
--- Two columns so the window fits a 768px-tall UI at scale 1:
--- left = Traffic lights / Mob list, right = Alerts / Show in / Diagnostics, buttons across the bottom.
+-- Preview strip across the top, then two columns, so the window fits a 768px-tall UI at scale 1:
+-- left = Traffic lights / Mob list, right = Alerts / Show in / Diagnostics, reset button at the bottom.
 local BOX_W, COL_GAP, MARGIN = 360, 20, 20
 local LEFT_X, RIGHT_X = MARGIN, MARGIN + BOX_W + COL_GAP
-local PANEL_W, PANEL_H = MARGIN * 2 + BOX_W * 2 + COL_GAP, 532
-local BUTTON_W, BUTTON_GAP = 175, 10
-local BUTTONS_X = (PANEL_W - (BUTTON_W * 2 + BUTTON_GAP)) / 2 -- centred row
+local PANEL_W, PANEL_H = MARGIN * 2 + BOX_W * 2 + COL_GAP, 700
+local PREVIEW_TOP, PREVIEW_H = -48, 140
+local BOXES_TOP = PREVIEW_TOP - PREVIEW_H - 24 -- -212: leaves room for the box titles
+local BUTTON_W = 175
+local SLIDER_X, SLIDER_W = 180, 130
 local BACKDROP_TEMPLATE = BackdropTemplateMixin and "BackdropTemplate" or nil
 
 local panel
-local widgets = { checks = {} }
+local widgets = { checks = {}, sliders = {} }
 
 local function Label(parent, text, template)
     local fs = parent:CreateFontString(nil, "ARTWORK", template or "GameFontHighlight")
@@ -30,10 +32,10 @@ local function Row(region, parent, x, y)
     return region
 end
 
-local function NewBox(title, x, top, height)
+local function NewBox(title, x, top, height, width)
     local box = CreateFrame("Frame", nil, panel, BACKDROP_TEMPLATE)
     box:SetPoint("TOPLEFT", panel, "TOPLEFT", x, top)
-    box:SetSize(BOX_W, height)
+    box:SetSize(width or BOX_W, height)
     if box.SetBackdrop then
         box:SetBackdrop({
             bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -44,7 +46,7 @@ local function NewBox(title, x, top, height)
         box:SetBackdropColor(0.05, 0.05, 0.05, 0.55)
         box:SetBackdropBorderColor(0.6, 0.6, 0.6, 1)
     end
-    Label(panel, title, "GameFontNormal"):SetPoint("BOTTOMLEFT", box, "TOPLEFT", 8, 3)
+    if title then Label(panel, title, "GameFontNormal"):SetPoint("BOTTOMLEFT", box, "TOPLEFT", 8, 3) end
     return box
 end
 
@@ -62,39 +64,66 @@ local function NewCheck(parent, entry)
     return cb
 end
 
--- Value applied on Enter or focus loss; Esc cancels.
-local function NewEditBox(parent, width, entry)
-    local eb = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
-    eb:SetSize(width, 20)
-    eb:SetAutoFocus(false)
-    eb:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
-    eb:SetScript("OnEscapePressed", function(self) self.cancel = true; self:ClearFocus() end)
-    eb:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
-    eb:SetScript("OnEditFocusLost", function(self)
-        self:HighlightText(0, 0)
-        if self.cancel then
-            self.cancel = nil
-        else
-            local ok, message = SettingsRegistry.Set(entry.key, self:GetText())
-            if ok then return end
-            TT.Print(message)
+-- Horizontal slider for a number setting, with its value shown to the right.
+-- Dragging applies live through SettingsRegistry.Set, the same validation as slash input.
+-- Refresh shows db[key] as saved, so an off-step value typed in chat (1.23) reads as entered.
+local sliderCount = 0
+local function NewSlider(parent, entry, step)
+    sliderCount = sliderCount + 1
+    local name = "TankTrafficLightOptionsSlider" .. sliderCount -- named so template regions resolve
+    local ok, s = pcall(CreateFrame, "Slider", name, parent, "OptionsSliderTemplate")
+    if ok and s then
+        for _, suffix in ipairs({ "Low", "High", "Text" }) do
+            local region = s[suffix] or _G[name .. suffix]
+            if region then region:Hide() end
         end
-        TT.RefreshOptions()
+    else
+        s = CreateFrame("Slider", nil, parent)
+    end
+    if not s:GetThumbTexture() then -- no template (or one without a thumb): build track and thumb by hand
+        s:SetOrientation("HORIZONTAL")
+        s:SetHeight(17)
+        local track = s:CreateTexture(nil, "BACKGROUND")
+        track:SetColorTexture(0.25, 0.25, 0.25, 0.9)
+        track:SetPoint("LEFT", s, "LEFT", 0, 0)
+        track:SetPoint("RIGHT", s, "RIGHT", 0, 0)
+        track:SetHeight(6)
+        s:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+        local thumb = s:GetThumbTexture()
+        if thumb then thumb:SetSize(32, 32) end
+        s:EnableMouse(true)
+    end
+    s:SetWidth(SLIDER_W)
+    s:SetMinMaxValues(entry.min, entry.max)
+    s:SetValueStep(step)
+    if s.SetObeyStepOnDrag then s:SetObeyStepOnDrag(true) end
+
+    local valueText = Label(parent, nil, "GameFontHighlightSmall")
+    valueText:SetPoint("LEFT", s, "RIGHT", 6, 0)
+
+    -- Round to the step's precision so 0.45 doesn't become 0.45000001.
+    local fraction = tostring(step):match("%.(%d+)")
+    local precision = "%." .. (fraction and #fraction or 0) .. "f"
+
+    s:SetScript("OnValueChanged", function(_, v)
+        if widgets.refreshing then return end -- our own SetValue from Refresh
+        v = tonumber(string.format(precision, math.floor(v / step + 0.5) * step))
+        if v == TankTrafficLightDB[entry.key] then return end
+        local applied, message = SettingsRegistry.Set(entry.key, v)
+        if not applied then
+            TT.Print(message)
+            TT.RefreshOptions()
+        end
     end)
-    return eb
-end
-
-local function NumberLabel(entry)
-    return string.format("%s (%s - %s):", entry.label, entry.min, entry.max)
-end
-
-local function NewButton(text, column, top, onClick)
-    local b = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    b:SetSize(BUTTON_W, 22)
-    b:SetPoint("TOPLEFT", panel, "TOPLEFT", BUTTONS_X + (column - 1) * (BUTTON_W + BUTTON_GAP), top)
-    if text then b:SetText(text) end
-    b:SetScript("OnClick", onClick)
-    return b
+    s.Refresh = function(self)
+        local current = TankTrafficLightDB[entry.key]
+        widgets.refreshing = true
+        self:SetValue(current)
+        widgets.refreshing = false
+        valueText:SetText(tostring(current))
+    end
+    widgets.sliders[#widgets.sliders + 1] = s
+    return s
 end
 
 -- Button that cycles a choice setting; its text is refreshed in TT.RefreshOptions.
@@ -107,6 +136,16 @@ end
 
 local function ChoiceText(entry)
     return entry.labels[TankTrafficLightDB[entry.key]] or entry.labels[entry.values[1]]
+end
+
+local function SetButtonEnabled(b, enabled)
+    if b.SetEnabled then
+        b:SetEnabled(enabled)
+    elseif enabled then
+        b:Enable()
+    else
+        b:Disable()
+    end
 end
 
 local function CreatePanel()
@@ -147,15 +186,23 @@ local function CreatePanel()
     Label(panel, "Traffic lights on nameplates: who is on you, who is slipping",
         "GameFontDisableSmall"):SetPoint("TOP", panel, "TOP", 0, -32)
 
+    -- Preview (sample nameplate, see Preview.lua) ---------------------------
+    local previewBox = NewBox(nil, MARGIN, PREVIEW_TOP, PREVIEW_H, PANEL_W - MARGIN * 2)
+    local previewArea = CreateFrame("Frame", nil, previewBox)
+    previewArea:SetPoint("TOPLEFT", previewBox, "TOPLEFT", 5, -5)
+    previewArea:SetPoint("BOTTOMRIGHT", previewBox, "BOTTOMRIGHT", -5, 5)
+    TT.Preview.Create(previewArea)
+    Label(previewBox, "Preview", "GameFontDisableSmall"):SetPoint("TOPLEFT", previewBox, "TOPLEFT", 10, -8)
+
     -- Traffic lights --------------------------------------------------------
-    local lights = NewBox("Traffic lights", LEFT_X, -70, 258)
+    local lights = NewBox("Traffic lights", LEFT_X, BOXES_TOP, 286)
     Row(NewCheck(lights, ByKey.lights), lights, 12, -20)
     Row(NewCheck(lights, ByKey.tankOnly), lights, 12, -46)
     Row(NewCheck(lights, ByKey.pulse), lights, 12, -72)
     Row(NewCheck(lights, ByKey.showGrey), lights, 12, -98)
 
-    Row(Label(lights, NumberLabel(ByKey.greyAlpha)), lights, 16, -126)
-    widgets.greyAlpha = Row(NewEditBox(lights, 40, ByKey.greyAlpha), lights, 256, -126)
+    Row(Label(lights, ByKey.greyAlpha.label .. ":"), lights, 16, -126)
+    Row(NewSlider(lights, ByKey.greyAlpha, 0.05), lights, SLIDER_X, -126)
 
     Row(Label(lights, ByKey.palette.label .. ":"), lights, 16, -154)
     widgets.palette = Row(CycleButton(lights, ByKey.palette), lights, 250, -154)
@@ -163,22 +210,25 @@ local function CreatePanel()
     Row(Label(lights, ByKey.side.label .. ":"), lights, 16, -182)
     widgets.side = Row(CycleButton(lights, ByKey.side), lights, 250, -182)
 
-    Row(Label(lights, NumberLabel(ByKey.lightScale)), lights, 16, -210)
-    widgets.scale = Row(NewEditBox(lights, 40, ByKey.lightScale), lights, 256, -210)
+    Row(Label(lights, ByKey.align.label .. ":"), lights, 16, -210)
+    widgets.align = Row(CycleButton(lights, ByKey.align), lights, 250, -210)
 
-    Row(Label(lights, NumberLabel(ByKey.topOffset)), lights, 16, -236)
-    widgets.topOffset = Row(NewEditBox(lights, 40, ByKey.topOffset), lights, 256, -236)
+    Row(Label(lights, ByKey.lightScale.label .. ":"), lights, 16, -238)
+    Row(NewSlider(lights, ByKey.lightScale, 0.05), lights, SLIDER_X, -238)
+
+    Row(Label(lights, ByKey.gap.label .. ":"), lights, 16, -264)
+    Row(NewSlider(lights, ByKey.gap, 1), lights, SLIDER_X, -264)
 
     -- Mob list --------------------------------------------------------------
-    local list = NewBox("Mob list", LEFT_X, -356, 124)
+    local list = NewBox("Mob list", LEFT_X, BOXES_TOP - 314, 124)
     Row(NewCheck(list, ByKey.mobList), list, 12, -20)
     Row(NewCheck(list, ByKey.listMinimized), list, 12, -46)
     Row(NewCheck(list, ByKey.listLocked), list, 12, -72)
-    Row(Label(list, NumberLabel(ByKey.listRows)), list, 16, -100)
-    widgets.listRows = Row(NewEditBox(list, 40, ByKey.listRows), list, 256, -100)
+    Row(Label(list, ByKey.listRows.label .. ":"), list, 16, -100)
+    Row(NewSlider(list, ByKey.listRows, 1), list, SLIDER_X, -100)
 
     -- Alerts ----------------------------------------------------------------
-    local alerts = NewBox("Alerts", RIGHT_X, -70, 122)
+    local alerts = NewBox("Alerts", RIGHT_X, BOXES_TOP, 122)
     Row(NewCheck(alerts, ByKey.slipSound), alerts, 12, -20)
     widgets.slipSoundName = Row(CycleButton(alerts, ByKey.slipSoundName), alerts, 262, -20)
     Row(NewCheck(alerts, ByKey.healerSound), alerts, 12, -46)
@@ -191,37 +241,37 @@ local function CreatePanel()
     test:SetScript("OnClick", function() TT.Alerts.Test() end)
 
     -- Where -----------------------------------------------------------------
-    local where = NewBox("Show in", RIGHT_X, -220, 124)
+    local where = NewBox("Show in", RIGHT_X, BOXES_TOP - 150, 124)
     Row(NewCheck(where, ByKey.showWorld), where, 12, -20)
     Row(NewCheck(where, ByKey.showDungeon), where, 12, -46)
     Row(NewCheck(where, ByKey.showRaid), where, 12, -72)
     Row(NewCheck(where, ByKey.showPvP), where, 12, -98)
 
     -- Diagnostics -----------------------------------------------------------
-    local diag = NewBox("Diagnostics", RIGHT_X, -372, 72)
+    local diag = NewBox("Diagnostics", RIGHT_X, BOXES_TOP - 302, 72)
     Row(NewCheck(diag, ByKey.trace), diag, 12, -20)
     Row(NewCheck(diag, ByKey.autoProbe), diag, 12, -46)
 
-    -- Buttons ---------------------------------------------------------------
-    widgets.demo = NewButton(nil, 1, -494, function()
-        TT.Lights.SetDemo(not TT.Lights.IsDemo())
-        TT.RefreshOptions()
-    end)
-    NewButton("Reset all settings", 2, -494, function() TT.ResetSettings() end)
+    -- Button ----------------------------------------------------------------
+    local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    reset:SetSize(BUTTON_W, 22)
+    reset:SetPoint("BOTTOM", panel, "BOTTOM", 0, 18)
+    reset:SetText("Reset all settings")
+    reset:SetScript("OnClick", function() TT.ResetSettings() end)
 end
 
 function TT.RefreshOptions()
     if not panel then return end
     for _, cb in ipairs(widgets.checks) do cb:Refresh() end
+    for _, slider in ipairs(widgets.sliders) do slider:Refresh() end
+    local side = TankTrafficLightDB.side
     widgets.side:SetText(ChoiceText(ByKey.side))
+    widgets.align:SetText(ChoiceText(ByKey.align)) -- the saved alignment, even while disabled
+    SetButtonEnabled(widgets.align, side == "top" or side == "bottom")
     widgets.palette:SetText(ChoiceText(ByKey.palette))
     widgets.slipSoundName:SetText(ChoiceText(ByKey.slipSoundName))
     widgets.healerSoundName:SetText(ChoiceText(ByKey.healerSoundName))
-    widgets.greyAlpha:SetText(tostring(TankTrafficLightDB.greyAlpha))
-    widgets.scale:SetText(tostring(TankTrafficLightDB.lightScale))
-    widgets.topOffset:SetText(tostring(TankTrafficLightDB.topOffset))
-    widgets.listRows:SetText(tostring(TankTrafficLightDB.listRows))
-    widgets.demo:SetText(TT.Lights.IsDemo() and "Stop demo" or "Demo: cycle colors")
+    TT.Preview.Refresh()
 end
 
 function TT.IsOptionsShown()

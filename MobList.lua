@@ -18,16 +18,6 @@ local DEFAULT_POS = { "TOPLEFT", "LEFT", 40, 120 } -- point, UIParent relative p
 local rows = {}        -- unit token -> { guid, state, since }
 local entryCounter = 0 -- bumps each time a mob enters a state, for stable ordering
 local dirty = true
-local demo = false
-
-local DEMO_ROWS = {
-    { state = "red", name = "Defias Trapper", target = "Heidi" },
-    { state = "red", name = "Defias Smuggler", target = "Loki" },
-    { state = "yellow", name = "Goretusk" },
-    { state = "green", name = "Defias Pillager" },
-    { state = "green", name = "Riverpaw Gnoll" },
-    { state = "green", name = "Murloc Raider" },
-}
 
 ---------------------------------------------------------------------------
 -- State from Lights.lua
@@ -61,11 +51,6 @@ function M.Remove(unit)
         rows[unit] = nil
         dirty = true
     end
-end
-
-function M.SetDemo(on)
-    demo = on and true or false
-    dirty = true
 end
 
 -- Settings that change the list without reclassifying (lock, minimize, rows, palette).
@@ -197,12 +182,6 @@ end
 
 local function Collect()
     local list = {}
-    if demo then
-        for i, d in ipairs(DEMO_ROWS) do
-            list[#list + 1] = { state = d.state, since = i, name = d.name, target = d.target }
-        end
-        return list
-    end
     for unit, row in pairs(rows) do
         if Rank(row.state) then
             list[#list + 1] = { unit = unit, state = row.state, since = row.since }
@@ -218,9 +197,9 @@ end
 
 local function RowText(item)
     local st = TT.States
-    local name = item.name or NameOf(item.unit)
+    local name = NameOf(item.unit)
     if item.state == st.RED then
-        return name .. " -> " .. (item.target or NameOf(item.unit .. "target"))
+        return name .. " -> " .. NameOf(item.unit .. "target")
     elseif item.state == st.YELLOW then
         return name .. " (slipping)"
     end
@@ -242,7 +221,7 @@ local function Redraw()
     local locked = db.listLocked and true or false
     -- While the options window is open, stay visible so list settings show their effect.
     local optionsOpen = TT.IsOptionsShown and TT.IsOptionsShown()
-    local shown = db.mobList and (#list > 0 or not locked or demo or optionsOpen)
+    local shown = db.mobList and (#list > 0 or not locked or optionsOpen)
     header:EnableMouse(not locked) -- drag only when unlocked; the button always works
     minButton:SetText(db.listMinimized and "+" or "-")
 
