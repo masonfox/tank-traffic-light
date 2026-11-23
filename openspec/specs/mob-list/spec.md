@@ -110,7 +110,7 @@ When the list is unlocked, the player SHALL be able to drag it by its header, an
 - **THEN** the list is visible with a drag hint, so it can be placed
 
 ### Requirement: When the list is shown
-When the list setting is on, the list SHALL be shown while it has at least one row, while it is unlocked, while demo mode is on, or while the options window is open. Otherwise it SHALL be hidden. The list SHALL run only when the tank-only and "Show in" zone filters from the display-gating rules allow it. The lights setting SHALL NOT affect the list. When the list setting is off, the list SHALL be hidden in all cases, including demo mode.
+When the list setting is on, the list SHALL be shown while it has at least one row, while it is unlocked, or while the options window is open. Otherwise it SHALL be hidden. The list SHALL run only when the tank-only and "Show in" zone filters from the display-gating rules allow it. The lights setting SHALL NOT affect the list. When the list setting is off, the list SHALL be hidden in all cases. The list SHALL only ever show rows for real classified mobs; it SHALL NOT show sample rows.
 
 #### Scenario: Out of combat
 - **WHEN** the list is on and locked, no mob is classified, and the options window is closed
@@ -118,7 +118,7 @@ When the list setting is on, the list SHALL be shown while it has at least one r
 
 #### Scenario: Options window open
 - **WHEN** the list is on and locked, no mob is classified, and the options window is open
-- **THEN** the list is shown, so list settings show their effect, and it hides again when the window closes
+- **THEN** the list is shown with no rows, so list settings show their effect, and it hides again when the window closes
 
 #### Scenario: Zone disabled
 - **WHEN** the current zone type is turned off in "Show in", the list is locked, and the options window is closed
@@ -130,7 +130,7 @@ When the list setting is on, the list SHALL be shown while it has at least one r
 
 #### Scenario: List turned off
 - **WHEN** the list setting is off
-- **THEN** the list is hidden, even in demo mode
+- **THEN** the list is hidden, even while the options window is open
 
 ### Requirement: Refresh
 The list SHALL reflect classification changes within about 0.25 seconds while the player is in combat. A setting change that affects the list SHALL apply immediately. Redrawing the list SHALL happen at most once per refresh, not once per mob.

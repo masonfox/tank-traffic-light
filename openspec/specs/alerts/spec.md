@@ -5,17 +5,6 @@ Defines the sound and on-screen alerts that let a tank notice slipping aggro and
 
 ## Requirements
 
-### Requirement: Alerts follow light classification
-Alerts SHALL fire only from real light classification during normal operation: when lights are running under the display-gating rules and demo mode is off. Alerts SHALL never raise a Lua error; if a sound, name, role or class cannot be read, that part of the alert SHALL be skipped or replaced with a generic version.
-
-#### Scenario: Lights gated off
-- **WHEN** lights are not running in the current zone
-- **THEN** no alert fires
-
-#### Scenario: Demo mode
-- **WHEN** demo mode is cycling lights
-- **THEN** no alert fires
-
 ### Requirement: Slipping sound
 When the slipping-sound setting is on and a mob's light changes to YELLOW from any other state, the addon SHALL play the chosen slipping sound. The slipping sound SHALL play at most once every 2 seconds, no matter how many mobs turn YELLOW.
 
@@ -108,3 +97,14 @@ The "Test alerts" action SHALL play the slipping sound, then the healer sound, a
 #### Scenario: Test from chat
 - **WHEN** the player types `/ttl testalert` with all alert settings off
 - **THEN** both sounds play and the flash appears with sample text
+
+### Requirement: Alerts follow nameplate classification
+Alerts SHALL fire only from real light classification of nameplate units: when lights are running under the display-gating rules. The options window's sample light SHALL NOT fire alerts. Alerts SHALL never raise a Lua error; if a sound, name, role or class cannot be read, that part of the alert SHALL be skipped or replaced with a generic version.
+
+#### Scenario: Lights gated off
+- **WHEN** lights are not running in the current zone
+- **THEN** no alert fires
+
+#### Scenario: Preview cycling
+- **WHEN** the options window is open and its sample light cycles to YELLOW
+- **THEN** no alert fires
