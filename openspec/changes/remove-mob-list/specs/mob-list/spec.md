@@ -8,7 +8,7 @@
 
 ### Requirement: List works without the lights
 **Reason**: The mob list is removed, so nothing needs classification while the lights are off.
-**Migration**: Turn the lights on to see classification. With the lights off, nothing is classified and no alert fires.
+**Migration**: Turn the lights on to see classification. With the lights off, nameplates are not classified automatically and no alert fires; `/ttl why` still classifies on demand.
 
 ### Requirement: Row content
 **Reason**: The mob list is removed. Its "-> <target>" text for loose mobs is not kept anywhere else.
