@@ -9,7 +9,7 @@ The nameplate lights are the addon's real value: they put the answer right on th
 - **BREAKING**: Remove the mob list: the panel, its header counts, minimize button, drag and lock, and row cap.
 - **BREAKING**: Remove the list's settings (`mobList`, `listMinimized`, `listLocked`, `listRows`) and its saved position, the "Mob list" box in the options window, and the `/ttl list`, `listmin`, `listlock` and `listrows` commands. Those commands fall through to the command list like any unknown command.
 - On load, clear the list's settings and position from saved settings, so old installs don't keep stale keys.
-- The lights setting goes back to switching off automatic classification. It no longer keeps running for the list. `/ttl why` still classifies visible plates on demand. Alerts still follow the lights, except that turning the lights back on re-reports a mob that is still slipping.
+- The lights setting goes back to switching off automatic classification. It no longer keeps running for the list. `/ttl why` still classifies visible plates on demand. Alerts still follow the lights, except that turning the lights back on can play the slipping sound for a mob that is still YELLOW, subject to the slipping-sound setting and its throttle.
 - The options window loses the Mob list box and gets shorter.
 - Lost on purpose: the list's "-> <target>" text, which named who a loose mob was attacking. The red light still shows that a mob is loose, and the healer alert still covers the most urgent case.
 
