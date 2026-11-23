@@ -26,7 +26,7 @@
 ## 5. Integration check
 
 - [x] 5.1 Cross-file check: `grep -rn "MobList\|mobList\|listMinimized\|listLocked\|listRows\|listPos" *.lua *.toc` returns only the `MigrateSettings` lines in Core.lua, and every `TT.*` function still called from Lights.lua, Settings.lua, Core.lua and Options.lua is defined
-- [ ] 5.2 Manual in-game check (user): `/reload` with an old saved variables file that has list settings and loads with no Lua errors; `/ttl` opens the shorter window with no Mob list box and nothing overlapping; `/ttl list` prints the command list; pull a mob with lights on (light shows, alerts fire) and with `/ttl lights` off (no light, no alert); after logout, `TankTrafficLight.lua` in SavedVariables has no `mobList`/`list*` keys
+- [ ] 5.2 Manual in-game check (user): `/reload` with an old saved variables file that has list settings and loads with no Lua errors; `/ttl` opens the shorter window with no Mob list box and nothing overlapping; `/ttl list` prints the command list; pull a mob with lights on (light shows, alerts fire) and with `/ttl lights` off (no light, no alert); toggle `/ttl lights` off and back on while a mob is YELLOW and confirm the slipping sound plays at most once; after logout, `TankTrafficLight.lua` in SavedVariables has no `mobList`/`list*` keys
 
 ## Workflow follow-up
 
