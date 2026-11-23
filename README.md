@@ -13,7 +13,6 @@ A **WoW Forever** addon that puts a small traffic light on enemy nameplates, so 
 
 - **Nameplate lights** to the left, right, top or bottom of the health bar, with an adjustable gap. Top and bottom lights can be aligned to the left, middle or right of the bar. Works with Blizzard nameplates and Plater.
 - **Live preview**: the options window shows a sample nameplate with buffs, debuffs and a cast bar, and a sample light that follows every placement, size, color and opacity change as you make it.
-- **Mob list**: a movable panel listing every classified mob, red first, with who each loose mob is attacking and red/yellow/green counts in the header. It can be minimized and shows only in combat.
 - **Alerts**: a sound when aggro starts slipping, plus a sound and screen flash when a mob attacks a healer.
 - **Filters**: tank role only, and per zone type (open world, dungeons, raids, PvP).
 - **Colorblind palette** (Okabe-Ito vermilion, yellow and blue).
@@ -30,14 +29,15 @@ Common commands:
 
 | Command | Does |
 |---------|------|
-| `/ttl lights` / `/ttl list` | Toggle the nameplate lights / the mob list |
-| `/ttl listlock` | Unlock the mob list to drag it, then lock it again |
+| `/ttl lights` | Toggle the nameplate lights |
 | `/ttl side [left\|right\|top\|bottom]` | Move the lights; with no argument, cycle through the placements |
 | `/ttl align [left\|middle\|right]` | Align top and bottom lights along the health bar (no effect on left or right placement) |
 | `/ttl gap <0-60>` (or `height`) | Set the distance between the light and the health bar |
 | `/ttl colors [classic\|colorblind]` | Switch palettes |
 | `/ttl testalert` | Play both alerts |
 | `/ttl reset` | Restore all defaults |
+
+The mob list was removed in 0.4.0; `/ttl list`, `listmin`, `listlock` and `listrows` now print the command list.
 
 The preview at the top of the options window replaces the old `/ttl demo` command. Settings are saved per account; a top height saved by an earlier version carries over as the gap.
 

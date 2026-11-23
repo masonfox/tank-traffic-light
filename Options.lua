@@ -6,10 +6,10 @@ local ByKey = SettingsRegistry.ByKey
 
 local PANEL_NAME = "TankTrafficLightOptions"
 -- Preview strip across the top, then two columns, so the window fits a 768px-tall UI at scale 1:
--- left = Traffic lights / Mob list, right = Alerts / Show in / Diagnostics, reset button at the bottom.
+-- left = Traffic lights, right = Alerts / Show in / Diagnostics, reset button at the bottom.
 local BOX_W, COL_GAP, MARGIN = 360, 20, 20
 local LEFT_X, RIGHT_X = MARGIN, MARGIN + BOX_W + COL_GAP
-local PANEL_W, PANEL_H = MARGIN * 2 + BOX_W * 2 + COL_GAP, 700
+local PANEL_W, PANEL_H = MARGIN * 2 + BOX_W * 2 + COL_GAP, 636
 local PREVIEW_TOP, PREVIEW_H = -48, 140
 local BOXES_TOP = PREVIEW_TOP - PREVIEW_H - 24 -- -212: leaves room for the box titles
 local BUTTON_W = 175
@@ -161,9 +161,6 @@ local function CreatePanel()
     panel:SetScript("OnDragStart", panel.StartMoving)
     panel:SetScript("OnDragStop", panel.StopMovingOrSizing)
     panel:Hide()
-    -- The mob list stays visible while this window is open (see MobList.lua).
-    panel:SetScript("OnShow", function() TT.MobList.Refresh() end)
-    panel:SetScript("OnHide", function() TT.MobList.Refresh() end)
     table.insert(UISpecialFrames, PANEL_NAME) -- close with Esc
     if panel.SetBackdrop then
         panel:SetBackdrop({
@@ -218,14 +215,6 @@ local function CreatePanel()
 
     Row(Label(lights, ByKey.gap.label .. ":"), lights, 16, -264)
     Row(NewSlider(lights, ByKey.gap, 1), lights, SLIDER_X, -264)
-
-    -- Mob list --------------------------------------------------------------
-    local list = NewBox("Mob list", LEFT_X, BOXES_TOP - 314, 124)
-    Row(NewCheck(list, ByKey.mobList), list, 12, -20)
-    Row(NewCheck(list, ByKey.listMinimized), list, 12, -46)
-    Row(NewCheck(list, ByKey.listLocked), list, 12, -72)
-    Row(Label(list, ByKey.listRows.label .. ":"), list, 16, -100)
-    Row(NewSlider(list, ByKey.listRows, 1), list, SLIDER_X, -100)
 
     -- Alerts ----------------------------------------------------------------
     local alerts = NewBox("Alerts", RIGHT_X, BOXES_TOP, 122)

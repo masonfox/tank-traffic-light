@@ -15,10 +15,6 @@ TT.DEFAULTS = {
     align = "middle",
     lightScale = 1,
     gap = 4,
-    mobList = true,
-    listMinimized = false,
-    listLocked = true,
-    listRows = 8,
     showWorld = true,
     showDungeon = true,
     showRaid = true,
@@ -34,10 +30,12 @@ TT.DEFAULTS = {
 
 -- Earlier versions saved a top-only height; it becomes the gap for every placement.
 -- Runs before ApplyDefaults, or the default gap would replace the saved height.
+-- The removed mob list's settings and position are dropped.
 local function MigrateSettings()
     local db = TankTrafficLightDB
     if db.gap == nil and db.topOffset ~= nil then db.gap = db.topOffset end
     db.topOffset = nil
+    db.mobList, db.listMinimized, db.listLocked, db.listRows, db.listPos = nil, nil, nil, nil, nil
 end
 
 local function ApplyDefaults()
@@ -48,14 +46,11 @@ end
 
 function TT.ResetAll()
     for k, v in pairs(TT.DEFAULTS) do TankTrafficLightDB[k] = v end
-    TankTrafficLightDB.listPos = nil -- not a registry setting: no window control or slash command
-    TT.MobList.ApplyPosition()
 end
 
 function TT.ResetSettings()
     TT.ResetAll()
     TT.Lights.UpdateAll()
-    TT.MobList.Refresh()
     TT.RefreshOptions()
     Say("settings reset")
 end
@@ -70,8 +65,6 @@ loader:SetScript("OnEvent", function(self, _, name)
     MigrateSettings()
     ApplyDefaults()
     Settings.CheckDefaults()
-    TT.MobList.ApplyPosition()
-    TT.MobList.Refresh()
     self:UnregisterEvent("ADDON_LOADED")
 end)
 
