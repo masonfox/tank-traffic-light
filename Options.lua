@@ -263,10 +263,6 @@ function TT.RefreshOptions()
     TT.Preview.Refresh()
 end
 
-function TT.IsOptionsShown()
-    return panel ~= nil and panel:IsShown()
-end
-
 function TT.ToggleOptions(forceShow)
     if not TankTrafficLightDB then return end
     if not panel then CreatePanel() end
