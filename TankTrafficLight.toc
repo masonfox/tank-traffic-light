@@ -2,14 +2,13 @@
 ## Title: Tank Traffic Light
 ## Notes: Shows tanks which mobs are on them, which are loose, and which are about to slip.
 ## Author: Stand and Hit
-## Version: 0.3.0
+## Version: 0.4.0
 ## SavedVariables: TankTrafficLightDB
 
 Safe.lua
 Settings.lua
 Probe.lua
 Alerts.lua
-MobList.lua
 Lights.lua
 Preview.lua
 Options.lua

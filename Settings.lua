@@ -20,7 +20,7 @@ local function PreviewSound(value)
 end
 
 local Settings = {
-    Sections = { "Traffic lights", "Mob list", "Alerts", "Show in", "Diagnostics" },
+    Sections = { "Traffic lights", "Alerts", "Show in", "Diagnostics" },
     Entries = {
         { key = "lights", kind = "toggle", label = "Show traffic lights on enemy nameplates",
             section = "Traffic lights", slash = { "lights" } },
@@ -45,14 +45,6 @@ local Settings = {
             section = "Traffic lights", slash = { "scale", "size" }, min = 0.5, max = 3 },
         { key = "gap", kind = "number", label = "Gap", name = "gap",
             section = "Traffic lights", slash = { "gap", "height" }, min = 0, max = 60 },
-        { key = "mobList", kind = "toggle", label = "Show the mob list",
-            section = "Mob list", slash = { "list" } },
-        { key = "listMinimized", kind = "toggle", label = "Minimize the mob list",
-            section = "Mob list", slash = { "listmin" } },
-        { key = "listLocked", kind = "toggle", label = "Lock the mob list",
-            section = "Mob list", slash = { "listlock" } },
-        { key = "listRows", kind = "number", label = "Maximum rows", name = "maximum rows",
-            section = "Mob list", slash = { "listrows" }, min = 3, max = 20, integer = true },
         { key = "slipSound", kind = "toggle", label = "Sound when aggro starts slipping",
             section = "Alerts", slash = { "slipsound" } },
         { key = "slipSoundName", kind = "choice", label = "Slipping sound",
@@ -124,7 +116,6 @@ function Settings.Set(key, raw)
 
     TankTrafficLightDB[key] = value
     TT.Lights.UpdateAll()
-    TT.MobList.Refresh() -- lock, minimize, row cap and palette change the list without reclassifying
     TT.RefreshOptions()
     if entry.onChange then pcall(entry.onChange, value) end -- optional per-entry hook (e.g. sound preview)
     return true, entry.label .. ": " .. display

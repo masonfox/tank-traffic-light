@@ -7,11 +7,11 @@ Defines when traffic lights are allowed to run at all, based on the master toggl
 ## Requirements
 
 ### Requirement: Master toggle
-When the lights setting is off, no traffic lights SHALL be shown, except in demo mode.
+When the lights setting is off, no traffic lights SHALL be shown on nameplates. The options window's sample light is not a nameplate light and is not affected.
 
 #### Scenario: Lights turned off
-- **WHEN** the lights setting is off and demo mode is off
-- **THEN** every traffic light is hidden
+- **WHEN** the lights setting is off
+- **THEN** every traffic light on a nameplate is hidden
 
 ### Requirement: Tank-only filter
 When the tank-only setting is on, lights SHALL run only if the player's assigned role is tank or no role is assigned. If the role cannot be read, lights SHALL run.
@@ -42,10 +42,3 @@ Lights SHALL run only in zone types enabled in settings. Open world and scenario
 #### Scenario: Zone type unreadable
 - **WHEN** the instance type cannot be read
 - **THEN** lights run
-
-### Requirement: Demo mode bypasses gating
-Demo mode SHALL show lights on every visible nameplate regardless of the master toggle, the tank-only filter, zone filters, or threat classification. This is intentional, so the player can preview the lights anywhere.
-
-#### Scenario: Demo with lights off in a disabled zone
-- **WHEN** demo mode is on, the lights setting is off, and the current zone type is disabled
-- **THEN** every visible nameplate still shows a cycling traffic light
