@@ -29,7 +29,7 @@ The sample light SHALL be placed on the sample health bar using the same placeme
 - **THEN** the sample light moves to the right of the sample health bar
 
 ### Requirement: Sample light cycles its states
-The sample light SHALL cycle through RED, YELLOW, GREEN and GREY, one step per second, for as long as the options window is open. GREY SHALL be skipped while the grey light setting is off. The sample light SHALL show YELLOW with the pulse when pulse is on, and GREY at the grey opacity setting. The sample light SHALL be shown regardless of the master toggle, tank-only filter, zone filters, and combat. It SHALL NOT trigger alerts, add trace entries, or add rows to the mob list.
+The sample light SHALL cycle through RED, YELLOW, GREEN and GREY, one step per second, for as long as the options window is open. GREY SHALL be skipped while the grey light setting is off. The sample light SHALL show YELLOW with the pulse when pulse is on, and GREY at the grey opacity setting. The sample light SHALL be shown regardless of the master toggle, tank-only filter, zone filters, and combat. It SHALL NOT trigger alerts or add trace entries.
 
 #### Scenario: Grey light off
 - **WHEN** the grey light setting is off and the window is open
