@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Pinned so a new release can't break CI overnight (design Decision 6).
+  LUAROCKS_VERSION: "3.13.0"
+  OPENSPEC_VERSION: "2.1.1"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Set up Lua 5.1
+        uses: leafo/gh-actions-lua@v13.1.0
+        with:
+          luaVersion: "5.1"
+
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@v6.1.1
+        with:
+          luaRocksVersion: ${{ env.LUAROCKS_VERSION }}
+
+      - name: Cache LuaRocks tree
+        uses: actions/cache@v6.1.0
+        with:
+          path: .luarocks
+          key: ${{ runner.os }}-lua5.1-luarocks${{ env.LUAROCKS_VERSION }}-luacheck1.2.0-1
+
+      - name: Install luacheck
+        run: luarocks install luacheck 1.2.0-1
+
+      - name: Lint
+        run: luacheck .
+
+      - name: TOC check
+        run: lua scripts/check-toc.lua
+
+      - name: Set up Node
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Install OpenSpec CLI
+        run: npm i -g "@fission-ai/openspec@${OPENSPEC_VERSION}"
+
+      # Not --strict yet: existing specs carry length warnings (design Decision 8).
+      # Errors fail the run; warnings are only logged.
+      - name: Validate specs
+        run: openspec validate --all
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Set up Lua 5.1
+        uses: leafo/gh-actions-lua@v13.1.0
+        with:
+          luaVersion: "5.1"
+
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@v6.1.1
+        with:
+          luaRocksVersion: ${{ env.LUAROCKS_VERSION }}
+
+      - name: Cache LuaRocks tree
+        uses: actions/cache@v6.1.0
+        with:
+          path: .luarocks
+          key: ${{ runner.os }}-lua5.1-luarocks${{ env.LUAROCKS_VERSION }}-busted2.3.0-1-luacov1.1.1-1
+
+      - name: Install busted and luacov
+        run: |
+          luarocks install busted 2.3.0-1
+          luarocks install luacov 1.1.1-1
+
+      - name: Run tests
+        run: busted --coverage
+
+      # Per-file totals for the addon's root .lua files, from the Summary
+      # section of luacov.report.out, as a table in the job summary.
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ ! -f luacov.stats.out ]; then
+            echo "No coverage data (luacov.stats.out missing)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          luacov
+          {
+            echo "### Coverage (addon files)"
+            echo
+            echo "| File | Hits | Missed | Coverage |"
+            echo "| --- | ---: | ---: | ---: |"
+            awk '
+              /^Summary$/ { insummary = 1; next }
+              insummary && NF == 4 && $1 ~ /\.lua$/ {
+                file = $1; sub(/^\.\//, "", file)
+                if (file !~ /\//) printf "| %s | %s | %s | %s |\n", file, $2, $3, $4
+              }
+              insummary && $1 == "Total" { printf "| **Total (all files)** | %s | %s | %s |\n", $2, $3, $4 }
+            ' luacov.report.out
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Task 5.2 (added later): scenario coverage report, always runs.
+      # - name: Spec coverage
+      #   if: always()
+      #   run: lua scripts/spec-coverage.lua
