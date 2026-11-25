@@ -67,7 +67,7 @@ describe("settings", function()
             assert.equal("bottom", ctx.db().side)
         end)
 
-        it("Cycle placement", function()
+        it("Cycle placement by chat", function()
             assert.equal("left", ctx.db().side)
             ctx.slash("side")
             assert.equal("right", ctx.db().side)

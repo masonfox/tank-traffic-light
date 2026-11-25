@@ -9,8 +9,8 @@
 --   "Toggle a checkbox": Settings.Set with a boolean, as the checkbox does.
 --   "Off-step value from chat" (core_spec): the slider's value label is not checked.
 -- Left uncovered on purpose (options window, preview or frame placement only):
---   "Cycle placement" (window variant shares its title with the slash scenario, which
---   core_spec covers), "Alignment disabled on the sides", "No demo button",
+--   "Cycle placement" (window variant; the slash variant is "Cycle placement by chat",
+--   which core_spec covers), "Alignment disabled on the sides", "No demo button",
 --   "Test alerts from the window", "Unlock the list from the window",
 --   "Lock the list from the window", "Minimize from the list updates the window",
 --   "Open from game options", "Player resets" (window button; "Reset from chat" covers

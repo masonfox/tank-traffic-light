@@ -138,7 +138,7 @@ The addon SHALL register a "Tank Traffic Light" page in the game's AddOns option
 - **WHEN** the player types `/ttl side bottom`
 - **THEN** placement becomes Bottom and the lights move below the health bar
 
-#### Scenario: Cycle placement
+#### Scenario: Cycle placement by chat
 - **WHEN** placement is Left and the player types `/ttl side`
 - **THEN** placement becomes Right
 

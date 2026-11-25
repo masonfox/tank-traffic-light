@@ -25,6 +25,8 @@ The addon's behavior is described by about 140 spec scenarios, but nothing check
 
 None. Player-facing behavior does not change.
 
+The main `settings` spec was edited directly to rename the slash-command scenario "Cycle placement" to "Cycle placement by chat", because OpenSpec 2.1.1 rejects scenario renames inside a MODIFIED delta.
+
 ## Impact
 
 - New files: `.github/workflows/ci.yml`, `.luacheckrc`, `.busted`, `spec/` (the fake world in `spec/support/`, test files, the coverage script) and a TOC check script. None of these are listed in the TOC, so the client never loads them.
