@@ -16,10 +16,14 @@ local function RootFiles(glob)
     return names
 end
 
+-- True for a readable regular file. On Linux io.open also opens a directory, but
+-- reading from it then fails ("Is a directory"); an empty file just reads EOF.
 local function Exists(path)
     local f = io.open(path, "r")
-    if f then f:close() return true end
-    return false
+    if not f then return false end
+    local _, err = f:read(0)
+    f:close()
+    return err == nil
 end
 
 -- Listed file paths from a TOC: non-empty lines that aren't ## metadata or # comments.
@@ -47,7 +51,7 @@ for _, toc in ipairs(tocs) do
     local listed = {}
     for _, file in ipairs(ReadToc(toc)) do
         listed[file] = true
-        if not Exists(file) then Fail(toc .. ": listed file is missing: " .. file) end
+        if not Exists(file) then Fail(toc .. ": listed file is missing or not a regular file: " .. file) end
     end
     for _, file in ipairs(roots) do
         if not listed[file] then Fail(toc .. ": root .lua file is not listed: " .. file) end
