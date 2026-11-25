@@ -187,21 +187,6 @@ describe("settings", function()
     end)
 
     describe("Options window and slash commands stay in parity", function()
-        it("Every window control is reachable from chat", function()
-            local S = ctx.TT.Settings
-            for _, entry in ipairs(S.Entries) do
-                assert.is_true(#entry.slash > 0, entry.key)
-                for _, command in ipairs(entry.slash) do
-                    assert.equal(entry, S.BySlash[command], command)
-                end
-            end
-            -- The window's two buttons: "Test alerts" and "Reset all settings".
-            ctx.slash("testalert")
-            assert.equal(2, #world.played)
-            ctx.slash("reset")
-            assert.equal(PREFIX .. "settings reset", LastChat(world))
-        end)
-
         it("Same wording in chat and window", function()
             ctx.slash("pulse")
             assert.equal(PREFIX .. "Pulse the yellow light when aggro is slipping: OFF", LastChat(world))
@@ -354,6 +339,39 @@ describe("unit: slash dispatch", function()
     before_each(function()
         ctx = addon.load()
         world = ctx.world
+    end)
+
+    -- Covers the settings registry and the window's two buttons, not the window's
+    -- controls themselves (Options.lua is not loaded), so the "Every window control is
+    -- reachable from chat" scenario stays uncovered.
+    it("changes every registry setting through each of its slash commands", function()
+        local S = ctx.TT.Settings
+        for _, entry in ipairs(S.Entries) do
+            assert.is_true(#entry.slash > 0, entry.key)
+            for _, command in ipairs(entry.slash) do
+                local before = ctx.db()[entry.key]
+                local msg, want = command, nil
+                if entry.kind == "toggle" then
+                    want = not before
+                elseif entry.kind == "choice" then
+                    for _, value in ipairs(entry.values) do
+                        if value ~= before then want = value break end
+                    end
+                    msg = command .. " " .. want
+                else
+                    want = before == entry.max and entry.min or entry.max
+                    msg = command .. " " .. tostring(want)
+                end
+                ctx.slash(msg)
+                assert.equal(want, ctx.db()[entry.key], msg)
+            end
+        end
+        -- The window's two buttons: "Test alerts" and "Reset all settings".
+        local played = #world.played   -- sound choices above play a preview
+        ctx.slash("testalert")
+        assert.equal(played + 2, #world.played)
+        ctx.slash("reset")
+        assert.equal(PREFIX .. "settings reset", LastChat(world))
     end)
 
     it("opens the window with options and config", function()
