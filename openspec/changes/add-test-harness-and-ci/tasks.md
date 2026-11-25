@@ -17,15 +17,15 @@
 
 ## 3. Unit tests
 
-- [ ] 3.1 Add `spec/safe_spec.lua` covering every `safe-api-access` scenario (secret value, no secret-value API, check that throws, missing API, API that errors, secret name in logs, probing a missing API), and verify all of them pass in CI
-- [ ] 3.2 Add `spec/settings_spec.lua` covering number parsing (comma decimal, range, off-step), toggle/choice validation, `Cycle` wrapping, the migration (`topOffset` to `gap`, mob-list keys dropped) and defaults on first install. Use `settings` scenario titles where one applies, such as "Comma decimal size by slash", "Invalid gap", "Cycle placement wraps" and "Upgrading keeps the top height", and verify they pass in CI
-- [ ] 3.3 Add `spec/core_spec.lua` driving `SlashCmdList.TANKTRAFFICLIGHT`: alias commands (`height`, `gray`), invalid values, removed mob-list commands and unknown commands printing help, `reset`, and `clear` emptying both logs. Verify the matching `settings`/`diagnostics` scenarios pass in CI
+- [x] 3.1 Add `spec/safe_spec.lua` covering every `safe-api-access` scenario (secret value, no secret-value API, check that throws, missing API, API that errors, secret name in logs, probing a missing API), and verify all of them pass in CI
+- [x] 3.2 Add `spec/settings_spec.lua` covering number parsing (comma decimal, range, off-step), toggle/choice validation, `Cycle` wrapping, the migration (`topOffset` to `gap`, mob-list keys dropped) and defaults on first install. Use `settings` scenario titles where one applies, such as "Comma decimal size by slash", "Invalid gap", "Cycle placement wraps" and "Upgrading keeps the top height", and verify they pass in CI
+- [x] 3.3 Add `spec/core_spec.lua` driving `SlashCmdList.TANKTRAFFICLIGHT`: alias commands (`height`, `gray`), invalid values, removed mob-list commands and unknown commands printing help, `reset`, and `clear` emptying both logs. Verify the matching `settings`/`diagnostics` scenarios pass in CI
 
 ## 4. Spec-scenario tests
 
-- [ ] 4.1 Add `spec/threat_classification_spec.lua` covering every `threat-classification` scenario (attackable/combat gating, threat-status colors, stranger and co-tank GREY, unreadable target RED, every fallback case, pet and raid membership, explanation text, grey off) and verify all of them pass in CI
-- [ ] 4.2 Add `spec/display_gating_spec.lua` covering every `display-gating` scenario, using `L.Update` on a nameplate with `C_NamePlate.GetNamePlateForUnit` returning a stub plate and asserting whether classification ran. Verify they pass in CI
-- [ ] 4.3 Add `spec/alerts_spec.lua` covering the logic `alerts` scenarios (slipping sound and its throttle across mobs, setting off, healer identification by role and class, mob-on-healer detection including flicker and co-tank, per-mob throttle reset on `PLAYER_REGEN_ENABLED`, missing sound is silent, the test command plays both sounds, alerts gated with the lights) using the fake clock and recorded `PlaySound` calls. Verify they pass in CI
+- [x] 4.1 Add `spec/threat_classification_spec.lua` covering every `threat-classification` scenario (attackable/combat gating, threat-status colors, stranger and co-tank GREY, unreadable target RED, every fallback case, pet and raid membership, explanation text, grey off) and verify all of them pass in CI
+- [x] 4.2 Add `spec/display_gating_spec.lua` covering every `display-gating` scenario, using `L.Update` on a nameplate with `C_NamePlate.GetNamePlateForUnit` returning a stub plate and asserting whether classification ran. Verify they pass in CI
+- [x] 4.3 Add `spec/alerts_spec.lua` covering the logic `alerts` scenarios (slipping sound and its throttle across mobs, setting off, healer identification by role and class, mob-on-healer detection including flicker and co-tank, per-mob throttle reset on `PLAYER_REGEN_ENABLED`, missing sound is silent, the test command plays both sounds, alerts gated with the lights) using the fake clock and recorded `PlaySound` calls. Verify they pass in CI
 - [ ] 4.4 Any scenario in these capabilities that the fake world can't express (purely visual flash details) is left uncovered on purpose, and the reason is noted in the test file header. Verify the coverage report lists only those as uncovered for these capabilities
 
 ## 5. Spec coverage report and docs

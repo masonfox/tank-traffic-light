@@ -112,7 +112,9 @@ jobs:
             ' luacov.report.out
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Task 5.2 (added later): scenario coverage report, always runs.
-      # - name: Spec coverage
-      #   if: always()
-      #   run: lua scripts/spec-coverage.lua
+      # Which openspec/specs/ scenarios have a test named after them (design
+      # Decision 5). Runs busted itself with the JSON output handler and always
+      # exits 0, so the report appears even when the tests above failed.
+      - name: Spec coverage
+        if: always()
+        run: lua scripts/spec-coverage.lua
