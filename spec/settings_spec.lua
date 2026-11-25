@@ -15,7 +15,8 @@
 --   "Lock the list from the window", "Minimize from the list updates the window",
 --   "Open from game options", "Player resets" (window button; "Reset from chat" covers
 --   the same reset), "Reset moves the list back" (no mob list panel to check),
---   "Drag the gap slider", "Slider shows the range limit".
+--   "Drag the gap slider", "Slider shows the range limit", "Window updates from chat"
+--   (the slash side is checked by the "unit: slash refresh" test in core_spec).
 
 local addon = require("spec.support.addon")
 

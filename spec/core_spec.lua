@@ -4,8 +4,7 @@
 -- Partly covered (the setting and chat output are checked; lights moving, repainting
 -- or the window's slider label are frame details outside this change, see the
 -- design's Non-Goals): "Set placement directly", "Bottom placement by chat",
--- "Set colorblind palette", "Off-step value from chat", "Window updates from chat"
--- (checked through the TT.RefreshOptions stub, since Options.lua is not loaded).
+-- "Set colorblind palette", "Off-step value from chat".
 -- Settings scenarios for the options window itself are listed in spec/settings_spec.lua.
 
 local addon = require("spec.support.addon")
@@ -193,13 +192,6 @@ describe("settings", function()
             ctx.slash("pulse")
             assert.equal(PREFIX .. "Pulse the yellow light when aggro is slipping: ON", LastChat(world))
         end)
-
-        it("Window updates from chat", function()
-            local refreshed = world.optionsRefreshed
-            ctx.slash("raid")
-            assert.is_false(ctx.db().showRaid)
-            assert.equal(refreshed + 1, world.optionsRefreshed)
-        end)
     end)
 
     describe("Numeric settings use sliders and shared validation", function()
@@ -337,6 +329,24 @@ describe("diagnostics", function()
             assert.same({}, ctx.db().traceLog)
             assert.equal(PREFIX .. "probe and trace logs cleared", LastChat(world))
         end)
+    end)
+end)
+
+describe("unit: slash refresh", function()
+    local ctx, world
+
+    before_each(function()
+        ctx = addon.load()
+        world = ctx.world
+    end)
+
+    -- Checked through the TT.RefreshOptions stub, since Options.lua is not loaded; the
+    -- "Window updates from chat" scenario itself is listed uncovered in settings_spec.
+    it("a slash setting change refreshes the options window", function()
+        local refreshed = world.optionsRefreshed
+        ctx.slash("raid")
+        assert.is_false(ctx.db().showRaid)
+        assert.equal(refreshed + 1, world.optionsRefreshed)
     end)
 end)
 
