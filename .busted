@@ -9,5 +9,7 @@ return {
         ROOT = { "spec" },
         pattern = "_spec",
         verbose = true,
+        -- Fails a test whose fake world recorded a missing-global read, even one a pcall hid.
+        helper = "spec/support/strict_globals.lua",
     },
 }

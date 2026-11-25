@@ -150,8 +150,13 @@ M.Widget = Widget
 -- The world
 ---------------------------------------------------------------------------
 
+-- Every world built since the last test ended; spec/support/strict_globals.lua checks
+-- their `missing` lists after each test and resets this.
+M.worlds = {}
+
 function M.new()
     local world = {}
+    M.worlds[#M.worlds + 1] = world
     world.SECRET = setmetatable({}, { __tostring = function() return "SECRET" end })
     world.units = {
         player = { name = "Tanky", guid = "Player-0-00000001", class = "WARRIOR", role = "TANK" },

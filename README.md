@@ -63,7 +63,7 @@ CI (`.github/workflows/ci.yml`) runs on every push, on pull requests, and on dem
 
 Test files live in `spec/` and end in `_spec.lua` (config in `.busted`). They run outside the game against a fake world in `spec/support/`:
 
-- `spec/support/wow.lua` stands in for the game API. Units, threat, group roles, the clock, sounds and chat output are all plain tables a test sets up and reads back. A global the fake world doesn't provide is an error, so a misspelled API name fails the test.
+- `spec/support/wow.lua` stands in for the game API. Units, threat, group roles, the clock, sounds and chat output are all plain tables a test sets up and reads back. A global the fake world doesn't provide is an error, so a misspelled API name fails the test. The read is also recorded in `world.missing`, and `spec/support/strict_globals.lua` (a busted helper set in `.busted`) fails any test that leaves an entry there, so a read the addon swallows with `pcall` still fails. A test that reads an unknown global on purpose empties `world.missing` itself.
 - `spec/support/addon.lua` loads the addon files in TOC order into a fresh environment per test and fires `ADDON_LOADED` with the saved variables the test passes in.
 
 `spec/harness_spec.lua` shows how to use both. Load a fresh addon in `before_each` so no state leaks between tests.

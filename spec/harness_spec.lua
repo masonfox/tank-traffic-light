@@ -32,6 +32,15 @@ describe("unit: fake world", function()
         setfenv(chunk, env)
         assert.error_matches(chunk, "fake world lacks global UnitFooTypo", 1, true)
         assert.same({ "UnitFooTypo" }, world.missing)
+        world.missing = {} -- consumed: the per-test check (spec/support/strict_globals.lua) would fail this test
+    end)
+
+    it("records a missing global even when a pcall swallows the error", function()
+        local chunk = assert(loadstring("return pcall(function() return UnitFooTypo('player') end)"))
+        setfenv(chunk, env)
+        assert.is_false((chunk()))
+        assert.same({ "UnitFooTypo" }, world.missing)
+        world.missing = {} -- consumed, as above
     end)
 
     it("reads an absent issecretvalue as nil", function()
