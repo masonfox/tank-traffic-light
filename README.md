@@ -80,7 +80,7 @@ end)
 
 Tests that cover no scenario go under `describe("unit: ...")`. `scripts/spec-coverage.lua` matches tests to scenarios by capability and title (the requirement name is ignored) and reports, per capability, covered versus total scenarios, the scenarios with no test, and tests whose name matches no scenario, which usually means a scenario was renamed. Neither report fails the run.
 
-To run everything locally with Lua 5.1, busted, luacov, luacheck and the OpenSpec CLI installed:
+To run everything locally with Lua 5.1, busted, luacov, luacheck and the OpenSpec CLI installed, from a Unix shell (Linux, macOS or WSL; the commands and scripts use `ls`, `find`, `test` and `/dev/null`, so they fail with native Windows Lua):
 
 ```sh
 luacheck .
@@ -90,3 +90,14 @@ openspec validate --all
 busted                         # or: busted --coverage && luacov
 lua scripts/spec-coverage.lua  # prints the spec coverage report
 ```
+
+#### With Docker (any OS, including Windows)
+
+`scripts/Dockerfile.test` builds a Lua 5.1 image with the same luacheck, busted and luacov versions as CI. From the repo root (in a POSIX shell such as Git Bash or WSL; on Windows Git Bash, prefix `docker run` with `MSYS_NO_PATHCONV=1` and mount `"$(pwd -W):/repo"`):
+
+```sh
+docker build -t ttl-test -f scripts/Dockerfile.test scripts
+docker run --rm -v "$PWD:/repo" -w /repo ttl-test sh -c 'luacheck . && luac -p $(git ls-files "*.lua") && lua scripts/check-toc.lua && busted && lua scripts/spec-coverage.lua'
+```
+
+The image has no OpenSpec CLI, so run `openspec validate --all` on the host.
