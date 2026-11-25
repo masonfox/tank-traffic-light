@@ -84,6 +84,7 @@ To run everything locally with Lua 5.1, busted, luacov, luacheck and the OpenSpe
 
 ```sh
 luacheck .
+luac -p $(git ls-files '*.lua')   # Lua 5.1 parser; rejects goto and other 5.2+ syntax
 lua scripts/check-toc.lua
 openspec validate --all
 busted                         # or: busted --coverage && luacov

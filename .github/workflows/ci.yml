@@ -42,6 +42,9 @@ jobs:
       - name: Lint
         run: luacheck .
 
+      - name: Syntax check (Lua 5.1)
+        run: luac -p $(git ls-files '*.lua')
+
       - name: TOC check
         run: lua scripts/check-toc.lua
 
