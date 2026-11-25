@@ -210,10 +210,20 @@ local function readResults(path)
         p:close()
     end
     -- The JSON handler writes one line at suite end; anything a test printed comes before it.
+    -- Only an object carrying busted's result lists counts; `{}` or an unrelated object
+    -- would otherwise read as a run with zero covered scenarios.
     local lastErr = "no JSON object in busted output"
     for start in text:gmatch("(){") do
         local ok, result = pcall(decodeJson, text:sub(start))
-        if ok and type(result) == "table" then return result end
+        if ok and type(result) == "table" then
+            local lists = { "successes", "failures", "errors", "pendings" }
+            local valid = true
+            for _, key in ipairs(lists) do
+                if type(result[key]) ~= "table" then valid = false end
+            end
+            if valid then return result end
+            lastErr = "JSON object is not a busted result (needs " .. table.concat(lists, ", ") .. " lists)"
+        end
         if not ok then lastErr = result end
     end
     error(lastErr, 0)
