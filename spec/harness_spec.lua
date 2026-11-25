@@ -82,4 +82,23 @@ describe("unit: fake world", function()
         assert.are_not.equal(wow.new().env, env)
         assert.is_nil(addon.load().world.units.nameplate1)
     end)
+
+    it("keeps alert throttles apart between two addon contexts", function()
+        -- Same fake time, same generated mob GUID, same alert in both contexts:
+        -- neither may be throttled by the other.
+        local contexts = { addon.load(), addon.load() }
+        local guids = {}
+        for i, c in ipairs(contexts) do
+            local w = c.world
+            local healer = w.partyMember({ role = "HEALER", class = "PRIEST", name = "Priestly" })
+            local mob = w.mob({ threat = 0, target = healer })
+            guids[i] = c.env.UnitGUID(mob)
+            assert.equal(100, w.time)
+            c.TT.Lights.Update(mob)
+        end
+        assert.equal(guids[1], guids[2])
+        assert.are_not.equal(contexts[1].world, contexts[2].world)
+        assert.same({ 8959 }, contexts[1].world.played)   -- RAID_WARNING
+        assert.same({ 8959 }, contexts[2].world.played)
+    end)
 end)
