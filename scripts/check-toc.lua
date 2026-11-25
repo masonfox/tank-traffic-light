@@ -18,7 +18,11 @@ end
 
 -- True for a readable regular file. On Linux io.open also opens a directory, but
 -- reading from it then fails ("Is a directory"); an empty file just reads EOF.
+-- Regular file only: `test -f` first, so /dev/null, FIFOs (which would block io.open)
+-- and directories are rejected before anything is opened.
 local function Exists(path)
+    local quoted = "'" .. path:gsub("'", "'\\''") .. "'"
+    if os.execute("test -f " .. quoted) ~= 0 then return false end
     local f = io.open(path, "r")
     if not f then return false end
     local _, err = f:read(0)
