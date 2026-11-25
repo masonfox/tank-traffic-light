@@ -2,18 +2,18 @@
 
 ## 1. Static checks in CI
 
-- [ ] 1.1 Add `.luacheckrc` (Lua 5.1 std, WoW read globals, writable addon globals, busted std for `spec/` and `scripts/`, `max_line_length` from the current longest line) and verify the globals list covers every capitalized global grep finds in the addon files
-- [ ] 1.2 Fix the warnings luacheck reports on the existing addon files, using reasoned per-line ignores only for intentional cases, and verify in CI that `luacheck .` exits 0 with no player-facing changes in the diff
-- [ ] 1.3 Add `scripts/check-toc.lua` (TOC files exist; every root `.lua` file is listed; files outside the root are ignored) and verify it passes on the repo and fails when a TOC entry is temporarily renamed in a throwaway branch
-- [ ] 1.4 Add `.github/workflows/ci.yml` with the `lint` job (pinned `leafo/gh-actions-lua` 5.1, `leafo/gh-actions-luarocks`, LuaRocks cache, luacheck, TOC check, pinned OpenSpec CLI running `openspec validate --all` without `--strict`, so warnings are logged but don't fail), triggered on push, pull_request and workflow_dispatch, and verify a pushed branch shows a green `lint` run and a manual dispatch re-runs it
+- [x] 1.1 Add `.luacheckrc` (Lua 5.1 std, WoW read globals, writable addon globals, busted std for `spec/` and `scripts/`, `max_line_length` from the current longest line) and verify the globals list covers every capitalized global grep finds in the addon files
+- [x] 1.2 Fix the warnings luacheck reports on the existing addon files, using reasoned per-line ignores only for intentional cases, and verify in CI that `luacheck .` exits 0 with no player-facing changes in the diff
+- [x] 1.3 Add `scripts/check-toc.lua` (TOC files exist; every root `.lua` file is listed; files outside the root are ignored) and verify it passes on the repo and fails when a TOC entry is temporarily renamed in a throwaway branch
+- [x] 1.4 Add `.github/workflows/ci.yml` with the `lint` job (pinned `leafo/gh-actions-lua` 5.1, `leafo/gh-actions-luarocks`, LuaRocks cache, luacheck, TOC check, pinned OpenSpec CLI running `openspec validate --all` without `--strict`, so warnings are logged but don't fail), triggered on push, pull_request and workflow_dispatch, and verify a pushed branch shows a green `lint` run and a manual dispatch re-runs it
 
 ## 2. Fake game environment
 
-- [ ] 2.1 Add `spec/support/wow.lua`: world table, `SECRET` sentinel with `issecretvalue`, unit APIs resolved through `world.units` (including `<unit>target`), `IsInInstance`, `GetTime`, `InCombatLockdown`, `PlaySound`/`SOUNDKIT` recording, `print` recording, `C_Timer.After` run immediately, and a permissive `CreateFrame` that captures `OnEvent` handlers. Verify with a `describe("unit: fake world")` test that resolves `nameplate1target` and reports a secret role as secret
-- [ ] 2.2 Add strict globals: a sandbox env per loaded chunk whose lookups error unless the name is provided or listed in `world.absent`. Verify with tests that reading an unknown global fails, and that an absent `issecretvalue` reads as `nil`
-- [ ] 2.3 Add `spec/support/addon.lua`: read the TOC, load the addon files in order into a fresh `TT` (skipping `Options.lua` and `Preview.lua`, stubbing `TT.RefreshOptions`/`TT.ToggleOptions`), and fire `ADDON_LOADED` with a test-supplied `TankTrafficLightDB`. Verify with a test that all six files load and `TT.Lights.StateFor` exists
-- [ ] 2.4 Add builder helpers (`world.mob`, `world.partyMember`, `world.raidMember`, `world.stranger`) and `.busted` config, and verify a test written with them stays within a few lines
-- [ ] 2.5 Add the `test` job to `ci.yml` (busted with `--coverage`, luacov per-file totals in `$GITHUB_STEP_SUMMARY`) and verify CI shows a green `test` run and a coverage table in the summary
+- [x] 2.1 Add `spec/support/wow.lua`: world table, `SECRET` sentinel with `issecretvalue`, unit APIs resolved through `world.units` (including `<unit>target`), `IsInInstance`, `GetTime`, `InCombatLockdown`, `PlaySound`/`SOUNDKIT` recording, `print` recording, `C_Timer.After` run immediately, and a permissive `CreateFrame` that captures `OnEvent` handlers. Verify with a `describe("unit: fake world")` test that resolves `nameplate1target` and reports a secret role as secret
+- [x] 2.2 Add strict globals: a sandbox env per loaded chunk whose lookups error unless the name is provided or listed in `world.absent`. Verify with tests that reading an unknown global fails, and that an absent `issecretvalue` reads as `nil`
+- [x] 2.3 Add `spec/support/addon.lua`: read the TOC, load the addon files in order into a fresh `TT` (skipping `Options.lua` and `Preview.lua`, stubbing `TT.RefreshOptions`/`TT.ToggleOptions`), and fire `ADDON_LOADED` with a test-supplied `TankTrafficLightDB`. Verify with a test that all six files load and `TT.Lights.StateFor` exists
+- [x] 2.4 Add builder helpers (`world.mob`, `world.partyMember`, `world.raidMember`, `world.stranger`) and `.busted` config, and verify a test written with them stays within a few lines
+- [x] 2.5 Add the `test` job to `ci.yml` (busted with `--coverage`, luacov per-file totals in `$GITHUB_STEP_SUMMARY`) and verify CI shows a green `test` run and a coverage table in the summary
 
 ## 3. Unit tests
 
