@@ -94,12 +94,13 @@ jobs:
       # section of luacov.report.out, as a table in the job summary.
       - name: Coverage summary
         if: always()
+        continue-on-error: true
         run: |
           if [ ! -f luacov.stats.out ]; then
             echo "No coverage data (luacov.stats.out missing)." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          luacov
+          if ! luacov; then echo "Coverage report failed (luacov exited non-zero); see the step log." >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           {
             echo "### Coverage (addon files)"
             echo
@@ -120,4 +121,5 @@ jobs:
       # exits 0, so the report appears even when the tests above failed.
       - name: Spec coverage
         if: always()
+        continue-on-error: true
         run: lua scripts/spec-coverage.lua
