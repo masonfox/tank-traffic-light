@@ -26,13 +26,13 @@
 - [x] 4.1 Add `spec/threat_classification_spec.lua` covering every `threat-classification` scenario (attackable/combat gating, threat-status colors, stranger and co-tank GREY, unreadable target RED, every fallback case, pet and raid membership, explanation text, grey off) and verify all of them pass in CI
 - [x] 4.2 Add `spec/display_gating_spec.lua` covering every `display-gating` scenario, using `L.Update` on a nameplate with `C_NamePlate.GetNamePlateForUnit` returning a stub plate and asserting whether classification ran. Verify they pass in CI
 - [x] 4.3 Add `spec/alerts_spec.lua` covering the logic `alerts` scenarios (slipping sound and its throttle across mobs, setting off, healer identification by role and class, mob-on-healer detection including flicker and co-tank, per-mob throttle reset on `PLAYER_REGEN_ENABLED`, missing sound is silent, the test command plays both sounds, alerts gated with the lights) using the fake clock and recorded `PlaySound` calls. Verify they pass in CI
-- [ ] 4.4 Any scenario in these capabilities that the fake world can't express (purely visual flash details) is left uncovered on purpose, and the reason is noted in the test file header. Verify the coverage report lists only those as uncovered for these capabilities
+- [x] 4.4 Any scenario in these capabilities that the fake world can't express (purely visual flash details) is left uncovered on purpose, and the reason is noted in the test file header. Verify the coverage report lists only those as uncovered for these capabilities
 
 ## 5. Spec coverage report and docs
 
-- [ ] 5.1 Add `scripts/spec-coverage.lua` (parse `openspec/specs/*/spec.md` scenarios, read busted JSON output, match on capability + title, write covered/total per capability, uncovered scenarios and unmatched tests to `$GITHUB_STEP_SUMMARY`, always exit 0) and verify that renaming a test in a throwaway commit makes it show as unmatched without failing the run
-- [ ] 5.2 Run the coverage script in the `test` job even when earlier steps fail, and verify the summary appears on both a green run and a deliberately failing run
-- [ ] 5.3 Update the README Development section (tests run in CI on every push, test files in `spec/`, naming tests after scenarios, the coverage report in the job summary) and verify the described paths and names match the repo
+- [x] 5.1 Add `scripts/spec-coverage.lua` (parse `openspec/specs/*/spec.md` scenarios, read busted JSON output, match on capability + title, write covered/total per capability, uncovered scenarios and unmatched tests to `$GITHUB_STEP_SUMMARY`, always exit 0) and verify that renaming a test in a throwaway commit makes it show as unmatched without failing the run
+- [x] 5.2 Run the coverage script in the `test` job even when earlier steps fail, and verify the summary appears on both a green run and a deliberately failing run
+- [x] 5.3 Update the README Development section (tests run in CI on every push, test files in `spec/`, naming tests after scenarios, the coverage report in the job summary) and verify the described paths and names match the repo
 
 ## 6. Integration
 
