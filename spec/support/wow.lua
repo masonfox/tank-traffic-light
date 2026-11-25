@@ -168,7 +168,8 @@ function M.new()
     world.played = {}                  -- PlaySound ids, in order
     world.playedChannels = {}          -- PlaySound channels, same order
     world.chat = {}                    -- print() lines
-    world.timers = {}                  -- C_Timer.After delays, in order (callbacks run at once)
+    world.timers = {}                  -- C_Timer.After delays, in order (callbacks run in world.advance)
+    world.pending = {}                 -- queued C_Timer.After callbacks: { at = due time, fn = callback }
     world.frames = {}                  -- every CreateFrame result, in creation order
     world.absent = {}                  -- name -> true: global reads as nil (API missing on this client)
     world.missing = {}                 -- globals the addon read that the world lacks, in order
@@ -285,10 +286,11 @@ function M.new()
         world.chat[#world.chat + 1] = table.concat(parts, " ")
     end
 
+    -- Callbacks wait on the fake clock: world.advance runs each once it is due.
     g.C_Timer = {
         After = function(delay, fn)
             world.timers[#world.timers + 1] = delay
-            fn()
+            world.pending[#world.pending + 1] = { at = world.time + delay, fn = fn }
         end,
     }
 
@@ -366,7 +368,23 @@ function M.new()
         end
     end
 
-    function world.advance(seconds) world.time = world.time + seconds end
+    -- Move the clock forward, running each C_Timer.After callback that falls due on
+    -- the way, earliest first (ties in scheduling order), with world.time set to its due
+    -- time. A callback may queue another; it runs too if due by the end.
+    function world.advance(seconds)
+        local target = world.time + seconds
+        while true do
+            local next
+            for i, t in ipairs(world.pending) do
+                if t.at <= target and (not next or t.at < world.pending[next].at) then next = i end
+            end
+            if not next then break end
+            local t = table.remove(world.pending, next)
+            if t.at > world.time then world.time = t.at end
+            t.fn()
+        end
+        world.time = target
+    end
 
     ---------------------------------------------------------------------------
     -- Builders: return the unit token, so a scenario is a few lines

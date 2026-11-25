@@ -305,15 +305,22 @@ describe("diagnostics", function()
             world.combatLockdown = true
             world.fire("PLAYER_REGEN_DISABLED")
             assert.same({ 3 }, world.timers)
+            world.advance(2)
+            assert.same({}, ctx.db().probeLog)
+            world.advance(1) -- combat still active at the 3 s deadline
             assert.matches("^=== Probe %(auto, 3s into combat%)", ctx.db().probeLog[1])
         end)
 
         it("Short combat", function()
             ctx.slash("auto")
-            -- C_Timer.After runs its callback at once; combat has already ended by then.
-            world.combatLockdown = false
+            world.combatLockdown = true
             world.fire("PLAYER_REGEN_DISABLED")
             assert.same({ 3 }, world.timers)
+            world.advance(1)
+            world.combatLockdown = false -- combat ends before the timer fires
+            world.fire("PLAYER_REGEN_ENABLED")
+            world.advance(2)
+            assert.same({}, world.pending)
             assert.same({}, ctx.db().probeLog)
         end)
     end)
@@ -369,6 +376,7 @@ describe("unit: slash dispatch", function()
         -- The window's two buttons: "Test alerts" and "Reset all settings".
         local played = #world.played   -- sound choices above play a preview
         ctx.slash("testalert")
+        world.advance(0.7) -- the second sound follows on a timer
         assert.equal(played + 2, #world.played)
         ctx.slash("reset")
         assert.equal(PREFIX .. "settings reset", LastChat(world))
@@ -434,6 +442,8 @@ describe("unit: slash dispatch", function()
     it("announces the alert test", function()
         ctx.slash("testalert")
         assert.equal(PREFIX .. "testing alerts: slipping sound, then healer sound and flash", LastChat(world))
+        assert.same({ ctx.env.SOUNDKIT.IG_PLAYER_INVITE }, world.played)
+        world.advance(0.7) -- the healer sound follows on a timer
         assert.same({ ctx.env.SOUNDKIT.IG_PLAYER_INVITE, ctx.env.SOUNDKIT.RAID_WARNING }, world.played)
     end)
 end)

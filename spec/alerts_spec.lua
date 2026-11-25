@@ -234,6 +234,9 @@ describe("alerts", function()
             load({ lights = false, slipSound = false, healerSound = false, healerFlash = false })
             world.combatLockdown = true
             ctx.slash("testalert")
+            assert.same({ PING }, world.played)
+            assert.is_nil(flash())
+            world.advance(0.7) -- healer sound and flash follow on a 0.7 s timer
             assert.same({ PING, RAID_WARNING }, world.played)
             local f = flash()
             assert.is_true(f:IsShown())
