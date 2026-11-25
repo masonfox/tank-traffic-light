@@ -1,7 +1,8 @@
 -- busted helper (see .busted): fails every test after which a fake world built during
 -- that test lists a global the addon read but the world lacks (world.missing). This
 -- catches reads that a pcall in the addon swallowed. A test that reads an unknown
--- global on purpose must empty world.missing itself.
+-- global on purpose must empty world.missing itself. A world built in setup() and reused
+-- across tests is never checked, so build every world per test (before_each or the test).
 --
 -- Required here, before any spec file, so every spec shares this module's world list.
 local wow = require("spec.support.wow")
