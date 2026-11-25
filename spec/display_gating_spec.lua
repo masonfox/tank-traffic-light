@@ -3,7 +3,8 @@
 -- Each test drives L.Update on a nameplate whose plate comes from the fake
 -- C_NamePlate.GetNamePlateForUnit, and asserts whether classification ran by
 -- counting calls to TT.Lights.StateFor (L.Update calls it through the table), plus
--- whether the light frame on the plate is shown.
+-- whether the light frame on the plate is shown. The role and zone cases also fire
+-- PLAYER_ROLES_ASSIGNED / ZONE_CHANGED_NEW_AREA to check an existing light hides.
 --
 -- Uncovered on purpose: none. The "Master toggle" requirement's note about the
 -- options window's sample light is out of scope here (Options.lua and Preview.lua
@@ -59,7 +60,14 @@ describe("display-gating", function()
         it("Player queued as healer", function()
             for _, role in ipairs({ "HEALER", "DAMAGER" }) do
                 local mob = setup({ tankOnly = true })
+                world.units.player.role = "TANK"
+                assert.is_true(select(2, update(mob)), role)
+
+                -- The role change reaches the existing light through its event.
                 world.units.player.role = role
+                assert.is_true(world.fire("PLAYER_ROLES_ASSIGNED") > 0)
+                assert.is_false(lightOf(mob):IsShown(), role)
+
                 local ran, shown = update(mob)
                 assert.is_false(ran, role)
                 assert.is_false(shown, role)
@@ -87,7 +95,14 @@ describe("display-gating", function()
         it("PvP disabled by default", function()
             for _, zone in ipairs({ "pvp", "arena" }) do
                 local mob = setup(nil) -- first install: defaults
+                world.instance = { false, "none" }
+                assert.is_true(select(2, update(mob)), zone)
+
+                -- Entering the zone reaches the existing light through its event.
                 world.instance = { true, zone }
+                assert.is_true(world.fire("ZONE_CHANGED_NEW_AREA") > 0)
+                assert.is_false(lightOf(mob):IsShown(), zone)
+
                 local ran, shown = update(mob)
                 assert.is_false(ran, zone)
                 assert.is_false(shown, zone)
