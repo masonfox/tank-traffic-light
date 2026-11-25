@@ -197,6 +197,18 @@ end
 
 -- ---------------------------------------------------------------- Test results
 
+-- busted emits each collection as an array of result tables. The decoder maps both
+-- `[]` and `{}` to an empty table, so an empty table passes; any other key fails.
+local function isResultList(value)
+    if type(value) ~= "table" then return false end
+    local n = 0
+    for _ in pairs(value) do n = n + 1 end
+    for i = 1, n do
+        if type(value[i]) ~= "table" then return false end
+    end
+    return true
+end
+
 local function readResults(path)
     local text
     if path then
@@ -213,20 +225,21 @@ local function readResults(path)
     -- Only an object carrying busted's result lists counts; `{}` or an unrelated object
     -- would otherwise read as a run with zero covered scenarios.
     local lastErr = "no JSON object in busted output"
+    local shapeErr
     for start in text:gmatch("(){") do
         local ok, result = pcall(decodeJson, text:sub(start))
         if ok and type(result) == "table" then
             local lists = { "successes", "failures", "errors", "pendings" }
             local valid = true
             for _, key in ipairs(lists) do
-                if type(result[key]) ~= "table" then valid = false end
+                if not isResultList(result[key]) then valid = false end
             end
             if valid then return result end
-            lastErr = "JSON object is not a busted result (needs " .. table.concat(lists, ", ") .. " lists)"
+            shapeErr = "JSON object is not a busted result (needs " .. table.concat(lists, ", ") .. " lists)"
         end
-        if not ok then lastErr = result end
+        if not ok and not shapeErr then lastErr = result end
     end
-    error(lastErr, 0)
+    error(shapeErr or lastErr, 0)
 end
 
 local function location(test)
