@@ -91,7 +91,10 @@ jobs:
         run: busted --coverage
 
       # Per-file totals for the addon's root .lua files, from the Summary
-      # section of luacov.report.out, as a table in the job summary.
+      # section of luacov.report.out, as a table in the job summary. Root .lua
+      # files listed in the TOC but never loaded by tests (Options.lua,
+      # Preview.lua; design Decision 2) get a "not loaded by tests" row, so the
+      # total covers loaded files only.
       - name: Coverage summary
         if: always()
         continue-on-error: true
@@ -107,13 +110,23 @@ jobs:
             echo "| File | Hits | Missed | Coverage |"
             echo "| --- | ---: | ---: | ---: |"
             awk '
+              FNR == NR {
+                line = $0; sub(/\r$/, "", line); gsub(/^[ \t]+|[ \t]+$/, "", line)
+                if (line !~ /^#/ && line ~ /\.lua$/ && line !~ /[\/\\]/) toc[++ntoc] = line
+                next
+              }
               /^Summary$/ { insummary = 1; next }
               insummary && NF == 4 && $1 ~ /\.lua$/ {
                 file = $1; sub(/^\.\//, "", file)
-                if (file !~ /\//) printf "| %s | %s | %s | %s |\n", file, $2, $3, $4
+                if (file !~ /\//) { seen[file] = 1; printf "| %s | %s | %s | %s |\n", file, $2, $3, $4 }
               }
-              insummary && $1 == "Total" { printf "| **Total (all files)** | %s | %s | %s |\n", $2, $3, $4 }
-            ' luacov.report.out
+              insummary && $1 == "Total" { total = sprintf("| **Total (loaded files)** | %s | %s | %s |", $2, $3, $4) }
+              END {
+                for (i = 1; i <= ntoc; i++)
+                  if (!(toc[i] in seen)) printf "| %s | — | — | not loaded by tests |\n", toc[i]
+                if (total != "") print total
+              }
+            ' TankTrafficLight.toc luacov.report.out
           } >> "$GITHUB_STEP_SUMMARY"
 
       # Which openspec/specs/ scenarios have a test named after them (design
