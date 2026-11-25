@@ -383,7 +383,7 @@ function M.new()
             if t.at > world.time then world.time = t.at end
             t.fn()
         end
-        world.time = target
+        world.time = math.max(world.time, target) -- a callback may have advanced past it
     end
 
     ---------------------------------------------------------------------------

@@ -58,6 +58,13 @@ describe("unit: fake world", function()
         assert.same({}, world.missing)
     end)
 
+    it("never moves the clock back when a timer callback advances it", function()
+        local start = world.time
+        env.C_Timer.After(1, function() world.advance(10) end)
+        world.advance(2)
+        assert.equal(start + 11, world.time)
+    end)
+
     it("applies defaults to a first-install TankTrafficLightDB", function()
         assert.is_table(ctx.db())
         assert.equal(TT.DEFAULTS.gap, ctx.db().gap)
