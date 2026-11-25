@@ -39,13 +39,14 @@ local function PathOf(root, file)
     return file
 end
 
--- File names listed in the TOC, in order.
+-- File names listed in the TOC, in order. Backslashes become forward slashes, as in
+-- scripts/check-toc.lua, so a nested path listed client-style loads on Linux too.
 function M.TocFiles(root)
     local files = {}
     local f = assert(io.open(PathOf(root, M.TOC), "r"))
     for line in f:lines() do
         line = line:gsub("\r$", ""):match("^%s*(.-)%s*$")
-        if line ~= "" and not line:match("^#") then files[#files + 1] = line end
+        if line ~= "" and not line:match("^#") then files[#files + 1] = (line:gsub("\\", "/")) end
     end
     f:close()
     return files
