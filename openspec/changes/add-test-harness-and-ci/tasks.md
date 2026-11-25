@@ -36,7 +36,7 @@
 
 ## 6. Integration
 
-- [ ] 6.1 Open a pull request from the change branch and verify both `lint` and `test` pass on it, with the coverage and spec-coverage tables in the summary
+- [x] 6.1 Open a pull request from the change branch and verify both `lint` and `test` pass on it, with the coverage and spec-coverage tables in the summary
 - [ ] 6.2 Load the addon in the WoW Forever client and verify `/ttl why` and a pull behave as before, since lint fixes touched addon files
 
 ## Workflow follow-up
