@@ -118,3 +118,30 @@ describe("unit: fake world", function()
         assert.same({ 8959 }, contexts[2].world.played)
     end)
 end)
+
+describe("unit: strict globals helper", function()
+    it("is loaded by .busted", function()
+        local config = dofile(".busted")
+        assert.equal("spec/support/strict_globals.lua", config.default.helper)
+    end)
+
+    it("fails a test that leaves a missing-global read and passes one that leaves none", function()
+        local hook
+        local stub = { executors = { after_each = function(fn) hook = fn end } }
+        assert.is_true(dofile("spec/support/strict_globals.lua")(stub))
+        assert.is_function(hook)
+
+        local saved = wow.worlds
+        local ok, err = pcall(function()
+            wow.worlds = { { missing = { "UnitFooTypo" } } }
+            local passed, message = pcall(hook)
+            assert.is_false(passed)
+            assert.matches("addon read globals the fake world lacks: UnitFooTypo", message, 1, true)
+
+            wow.worlds = { { missing = {} } }
+            assert.has_no.errors(hook)
+        end)
+        wow.worlds = saved -- the hook resets wow.worlds; give the real helper this test's worlds back
+        assert(ok, err)
+    end)
+end)
