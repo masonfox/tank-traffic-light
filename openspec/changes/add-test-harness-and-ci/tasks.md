@@ -44,3 +44,4 @@
 - After the first green run on `main`, mark `lint` and `test` as required status checks in GitHub branch protection (manual repository setting).
 - Archive this change once merged.
 - Follow-up change: split the over-500-character requirements, archive `baseline-current-behavior`, fix the stale mob-list scenario titles in `settings`, then switch CI to `openspec validate --all --strict`.
+- Follow-up change: `settings` has two scenarios titled "Cycle placement" (options window and slash commands), so the coverage report counts the slash test for both and lists the title under "Duplicate scenario titles". Rename one of them; openspec rejects a scenario rename inside a MODIFIED delta, so this needs a different approach, such as editing the main spec directly. Then rename the `core_spec.lua` test to match.

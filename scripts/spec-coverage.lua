@@ -178,16 +178,23 @@ local function listCapabilities()
     return caps
 end
 
--- Returns { names = {cap...}, [cap] = { titles = {title...}, set = {title = true} } }
+-- Returns { names = {cap...}, [cap] = { titles = {title...}, set = {title = true},
+-- dups = {title...}, count = {title = n} } }. A title used by more than one scenario in a
+-- capability appears once in `titles` and once in `dups`; one test covers all of them.
 local function readScenarios()
     local specs = { names = listCapabilities() }
     for _, cap in ipairs(specs.names) do
-        local entry = { titles = {}, set = {} }
+        local entry = { titles = {}, set = {}, dups = {}, count = {} }
         for line in (readFile(SPECS_DIR .. "/" .. cap .. "/spec.md") .. "\n"):gmatch("([^\n]*)\n") do
             local title = line:match("^####%s+Scenario:%s*(.-)%s*$")
-            if title and title ~= "" and not entry.set[title] then
-                entry.set[title] = true
-                entry.titles[#entry.titles + 1] = title
+            if title and title ~= "" then
+                entry.count[title] = (entry.count[title] or 0) + 1
+                if entry.count[title] == 1 then
+                    entry.set[title] = true
+                    entry.titles[#entry.titles + 1] = title
+                elseif entry.count[title] == 2 then
+                    entry.dups[#entry.dups + 1] = title
+                end
             end
         end
         specs[cap] = entry
@@ -350,6 +357,27 @@ local function buildReport(specs, results)
         add("None.")
         add()
     end
+
+    add("#### Duplicate scenario titles")
+    add()
+    local anyDup = false
+    for _, cap in ipairs(specs.names) do
+        local entry = specs[cap]
+        if #entry.dups > 0 then
+            if not anyDup then
+                add("Titles used by more than one scenario in a capability; one test counts for all of them.")
+                add()
+                anyDup = true
+            end
+            local items = {}
+            for _, title in ipairs(entry.dups) do
+                items[#items + 1] = ("%s (%d)"):format(md(title), entry.count[title])
+            end
+            add(("- **%s**: %s"):format(md(cap), table.concat(items, ", ")))
+        end
+    end
+    if not anyDup then add("None.") end
+    add()
 
     add("#### Unmatched tests")
     add()
