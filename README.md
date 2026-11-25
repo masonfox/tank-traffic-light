@@ -80,11 +80,12 @@ end)
 
 Tests that cover no scenario go under `describe("unit: ...")`. `scripts/spec-coverage.lua` matches tests to scenarios by capability and title (the requirement name is ignored) and reports, per capability, covered versus total scenarios, the scenarios with no test, and tests whose name matches no scenario, which usually means a scenario was renamed. Neither report fails the run.
 
-To run everything locally with Lua 5.1, busted, luacov and luacheck installed:
+To run everything locally with Lua 5.1, busted, luacov, luacheck and the OpenSpec CLI installed:
 
 ```sh
 luacheck .
 lua scripts/check-toc.lua
+openspec validate --all
 busted                         # or: busted --coverage && luacov
 lua scripts/spec-coverage.lua  # prints the spec coverage report
 ```
