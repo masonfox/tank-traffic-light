@@ -9,7 +9,7 @@ See proposal.md for why. Constraints that shape the approach:
 - The logic that matters is reachable through public functions: `TT.Lights.StateFor`, `IsGroupMember`, `IsCoTank`, `TT.Alerts.IsHealer` and `OnState`, `TT.Settings.Set` and `Cycle`, `TT.Safe.*`, and the slash handler in `SlashCmdList.TANKTRAFFICLIGHT`. `Classify` is local, but `StateFor` wraps it.
 - Several files create frames and register events while loading (`Lights.lua`, `Alerts.lua`, `Core.lua`), so even logic tests need a `CreateFrame` that accepts calls.
 - Every API read goes through `TT.Safe.Call`, which turns a missing function into "unreadable" instead of an error. That is right in game, but in tests it would hide a gap in the simulation (see Decision 3).
-- Tests run only in CI. No one runs Lua locally (decided during exploration).
+- CI is the gate. An optional Docker image (`scripts/Dockerfile.test`, added in review) runs the same checks locally. Exploration originally chose CI-only.
 
 ## Goals / Non-Goals
 
@@ -102,6 +102,7 @@ job lint (ubuntu-latest)
   leafo/gh-actions-lua (5.1) + leafo/gh-actions-luarocks
   luarocks install luacheck
   luacheck .
+  luac -p $(git ls-files '*.lua')
   lua scripts/check-toc.lua
   npm ci --ignore-scripts --prefix ci/openspec
   ci/openspec/node_modules/.bin/openspec validate --all   (not --strict, see Decision 8)

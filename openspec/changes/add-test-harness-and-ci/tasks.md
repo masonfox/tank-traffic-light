@@ -5,7 +5,7 @@
 - [x] 1.1 Add `.luacheckrc` (Lua 5.1 std, WoW read globals, writable addon globals, busted std for `spec/` and `scripts/`, `max_line_length` from the current longest line) and verify the globals list covers every capitalized global grep finds in the addon files
 - [x] 1.2 Fix the warnings luacheck reports on the existing addon files, using reasoned per-line ignores only for intentional cases, and verify in CI that `luacheck .` exits 0 with no player-facing changes in the diff
 - [x] 1.3 Add `scripts/check-toc.lua` (TOC files exist; every root `.lua` file is listed; files outside the root are ignored) and verify it passes on the repo and fails when a TOC entry is temporarily renamed in a throwaway branch
-- [x] 1.4 Add `.github/workflows/ci.yml` with the `lint` job (pinned `leafo/gh-actions-lua` 5.1, `leafo/gh-actions-luarocks`, LuaRocks cache, luacheck, TOC check, pinned OpenSpec CLI running `openspec validate --all` without `--strict`, so warnings are logged but don't fail), triggered on push, pull_request and workflow_dispatch, and verify a pushed branch shows a green `lint` run and a manual dispatch re-runs it
+- [x] 1.4 Add `.github/workflows/ci.yml` with the `lint` job (pinned `leafo/gh-actions-lua` 5.1, `leafo/gh-actions-luarocks`, LuaRocks cache, luacheck, Lua 5.1 syntax check (`luac -p`), TOC check, pinned OpenSpec CLI running `openspec validate --all` without `--strict`, so warnings are logged but don't fail), triggered on push, pull_request and workflow_dispatch, and verify a pushed branch shows a green `lint` run and a manual dispatch re-runs it
 
 ## 2. Fake game environment
 

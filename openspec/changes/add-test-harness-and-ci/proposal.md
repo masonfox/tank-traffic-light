@@ -13,7 +13,8 @@ The addon's behavior is described by about 140 spec scenarios, but nothing check
 - Add a spec-coverage report that matches `#### Scenario:` headings in `openspec/specs/` to test names and prints which scenarios have a test. It is report-only and never fails the build.
 - Add a GitHub Actions workflow that runs the static checks and the tests on every push, pull request and manual dispatch, and writes the coverage reports to the job summary.
 - Fix whatever the new lint flags in the existing code, so the lint job starts green without blanket ignores. These fixes do not change player-facing behavior.
-- Out of scope: tests that check frame anchors and lifecycle, tests for the options window and preview, running tests locally, and automated in-game tests.
+- Add an optional Docker image (`scripts/Dockerfile.test`) that runs the same checks locally. This was added during review.
+- Out of scope: tests that check frame anchors and lifecycle, tests for the options window and preview, and automated in-game tests.
 
 ## Capabilities
 
@@ -29,8 +30,8 @@ The main `settings` spec was edited directly to rename the slash-command scenari
 
 ## Impact
 
-- New files: `.github/workflows/ci.yml`, `.luacheckrc`, `.busted`, `spec/` (the fake world in `spec/support/`, test files, the coverage script) and a TOC check script. None of these are listed in the TOC, so the client never loads them.
+- New files: `.github/workflows/ci.yml`, `.luacheckrc`, `.busted`, `spec/` (the fake world in `spec/support/`, test files, the coverage script), a TOC check script, `scripts/Dockerfile.test` for the optional local run, and `ci/openspec/` (`package.json` and `package-lock.json` that pin the OpenSpec CLI). None of these are listed in the TOC, so the client never loads them.
 - Addon `.lua` files: only lint fixes such as unused locals or shadowed names. No behavior changes.
 - `README.md`: the Development section says tests run in CI and where they live.
-- New CI dependencies: Lua 5.1, LuaRocks, busted, luacheck, luacov, and the OpenSpec CLI (via npm).
+- New CI dependencies: Lua 5.1 (including the `luac` parse check), LuaRocks, busted, luacheck, luacov, and the OpenSpec CLI (via npm).
 - Making the checks required on `main` is a manual GitHub branch-protection setting, not part of the repo.
