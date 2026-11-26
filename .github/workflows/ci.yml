@@ -12,7 +12,6 @@ permissions:
 env:
   # Pinned so a new release can't break CI overnight (design Decision 6).
   LUAROCKS_VERSION: "3.13.0"
-  OPENSPEC_VERSION: "2.1.1"
 
 jobs:
   lint:
@@ -53,13 +52,15 @@ jobs:
         with:
           node-version: "24"
 
+      # Exact CLI version and its whole dependency tree are locked in
+      # ci/openspec/package-lock.json; install scripts are not run.
       - name: Install OpenSpec CLI
-        run: npm i -g "@fission-ai/openspec@${OPENSPEC_VERSION}"
+        run: npm ci --ignore-scripts --prefix ci/openspec
 
       # Not --strict yet: existing specs carry length warnings (design Decision 8).
       # Errors fail the run; warnings are only logged.
       - name: Validate specs
-        run: openspec validate --all
+        run: ci/openspec/node_modules/.bin/openspec validate --all
 
   test:
     runs-on: ubuntu-latest

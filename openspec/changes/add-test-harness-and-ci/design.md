@@ -103,7 +103,8 @@ job lint (ubuntu-latest)
   luarocks install luacheck
   luacheck .
   lua scripts/check-toc.lua
-  npm i -g @fission-ai/openspec && openspec validate --all   (not --strict, see Decision 8)
+  npm ci --ignore-scripts --prefix ci/openspec
+  ci/openspec/node_modules/.bin/openspec validate --all   (not --strict, see Decision 8)
 
 job test (ubuntu-latest)
   leafo/gh-actions-lua (5.1) + leafo/gh-actions-luarocks
@@ -113,7 +114,7 @@ job test (ubuntu-latest)
   lua scripts/spec-coverage.lua   (always runs, even after a failure)
 ```
 
-LuaRocks trees are cached per OS and rockspec list. Actions and the OpenSpec CLI are pinned to exact versions, so a new release can't break CI overnight.
+LuaRocks trees are cached per OS and rockspec list. Actions and the OpenSpec CLI are pinned to exact versions, and the CLI's whole npm dependency tree is locked by `ci/openspec/package-lock.json`, so a new release can't break CI overnight.
 
 ### 7. luacheck configuration
 
