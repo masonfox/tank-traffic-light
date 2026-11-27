@@ -50,15 +50,15 @@ CI SHALL fail when a file listed in the TOC does not exist, or when an addon `.l
 - **THEN** the TOC check ignores them
 
 ### Requirement: Specs stay valid
-CI SHALL validate every spec and active change with OpenSpec and fail when validation reports an error. Validation warnings SHALL be shown in the CI log but SHALL NOT fail the run.
+CI SHALL validate every spec and active change with OpenSpec in strict mode and fail when validation reports an error or a warning.
 
 #### Scenario: Structural error
 - **WHEN** a spec or active change has a validation error, such as a requirement with no scenario
 - **THEN** spec validation fails
 
-#### Scenario: Warning only
+#### Scenario: Warning fails validation
 - **WHEN** validation reports only warnings, such as a requirement description over 500 characters
-- **THEN** the warnings appear in the CI log and spec validation passes
+- **THEN** spec validation fails and the warnings appear in the CI log
 
 ### Requirement: Tests run the addon's own files under Lua 5.1
 The test suite SHALL run on Lua 5.1 and load the addon's unmodified source files, the same way the game client does, inside a simulated game environment. Each test SHALL start from freshly loaded addon files, so no state carries over between tests.

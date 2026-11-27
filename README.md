@@ -56,7 +56,7 @@ Behavior is specified with [OpenSpec](https://github.com/Fission-AI/OpenSpec) in
 
 CI (`.github/workflows/ci.yml`) runs on every push, on pull requests, and on demand. It has two jobs:
 
-- **lint**: `luacheck .` (config in `.luacheckrc`), `lua scripts/check-toc.lua` (every root `.lua` file is listed in the TOC files and every listed file exists), and `openspec validate --all`.
+- **lint**: `luacheck .` (config in `.luacheckrc`), `lua scripts/check-toc.lua` (every root `.lua` file is listed in the TOC files and every listed file exists), and `openspec validate --all --strict` (warnings fail too).
 - **test**: the [busted](https://lunarmodules.github.io/busted/) suite on Lua 5.1 with line coverage, then two reports in the job summary: line coverage per addon file, and spec coverage (which scenarios have a test).
 
 ### Tests
@@ -86,7 +86,7 @@ To run everything locally with Lua 5.1, busted, luacov, luacheck and the OpenSpe
 luacheck .
 luac -p $(git ls-files '*.lua')   # Lua 5.1 parser; rejects goto and other 5.2+ syntax
 lua scripts/check-toc.lua
-openspec validate --all
+openspec validate --all --strict
 busted                         # or: busted --coverage && luacov
 lua scripts/spec-coverage.lua  # prints the spec coverage report
 ```
@@ -100,4 +100,4 @@ docker build -t ttl-test -f scripts/Dockerfile.test scripts
 docker run --rm -v "$PWD:/repo" -w /repo ttl-test sh -c 'luacheck . && luac -p $(git ls-files "*.lua") && lua scripts/check-toc.lua && busted && lua scripts/spec-coverage.lua'
 ```
 
-The image has no OpenSpec CLI, so run `openspec validate --all` on the host.
+The image has no OpenSpec CLI, so run `openspec validate --all --strict` on the host.

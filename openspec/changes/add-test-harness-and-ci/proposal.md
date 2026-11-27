@@ -6,7 +6,7 @@ The addon's behavior is described by about 140 spec scenarios, but nothing check
 
 ## What Changes
 
-- Add static checks: luacheck on Lua 5.1 with a declared list of WoW globals, a check that the TOC file list matches the `.lua` files on disk, and `openspec validate --all` (errors fail the run, warnings are logged; strict mode waits for a spec cleanup follow-up).
+- Add static checks: luacheck on Lua 5.1 with a declared list of WoW globals, a check that the TOC file list matches the `.lua` files on disk, and `openspec validate --all --strict` (errors and warnings both fail the run). Seven main-spec requirements over 500 characters are split into smaller requirements so strict mode passes; their scenarios are unchanged.
 - Add a test suite run with busted on Lua 5.1, with a fake WoW environment ("fake world"). Tests load the addon's own files unchanged, the way the client does, and drive every `Unit*` API from one table of units, a secret-value sentinel and a fake clock.
 - Add unit tests for `Safe`, settings parsing, setting and cycling, the settings migration and defaults, and slash command dispatch.
 - Add spec-scenario tests for `threat-classification`, `display-gating`, `alerts` (healer identification, mob-on-healer detection, throttles) and `safe-api-access`. Each test is named after the scenario it covers.
@@ -27,6 +27,8 @@ The addon's behavior is described by about 140 spec scenarios, but nothing check
 None. Player-facing behavior does not change.
 
 The main `settings` spec was edited directly to rename the slash-command scenario "Cycle placement" to "Cycle placement by chat", because OpenSpec 2.1.1 rejects scenario renames inside a MODIFIED delta.
+
+The main `settings`, `nameplate-lights` and `diagnostics` specs were also edited directly so `openspec validate --strict` passes: seven requirements over 500 characters were split into smaller requirements, each stating one behavior. No behavior was added or removed, and every scenario kept its title and text.
 
 ## Impact
 

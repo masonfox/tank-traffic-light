@@ -25,15 +25,18 @@ Whenever a nameplate light's color changes, the addon SHALL save a trace entry w
 - **THEN** chat shows a status line, one line for each nameplate, and "visible nameplates: 2"
 
 ### Requirement: API probe
-`/ttl probe` SHALL record, for every visible nameplate, what each API the addon relies on returns (readable value, `SECRET`, error, or missing): attackability, combat state, GUID, threat status, detailed threat, target existence, name, role, class, and main-tank assignment, and whether the nameplate frame is Blizzard or Plater. It SHALL also record whether key APIs exist, the player's role, and whether the player is in combat. Output SHALL be printed to chat and saved to a probe log that keeps the most recent 400 lines.
-
-#### Scenario: Manual probe
-- **WHEN** the player types `/ttl probe`
-- **THEN** a timestamped probe report is printed and saved
+`/ttl probe` SHALL record, for every visible nameplate, what each API the addon relies on returns (readable value, `SECRET`, error, or missing): attackability, combat state, GUID, threat status, detailed threat, target existence, name, role, class, and main-tank assignment, and whether the nameplate frame is Blizzard or Plater.
 
 #### Scenario: Probe shows co-tank inputs
 - **WHEN** the player types `/ttl probe` while a mob targets a group member
 - **THEN** the report shows that target's role, class, and main-tank assignment (or `SECRET`)
+
+### Requirement: Probe report and log
+Each probe SHALL also record whether key APIs exist, the player's role, and whether the player is in combat. Output SHALL be printed to chat and saved to a probe log that keeps the most recent 400 lines.
+
+#### Scenario: Manual probe
+- **WHEN** the player types `/ttl probe`
+- **THEN** a timestamped probe report is printed and saved
 
 ### Requirement: Auto-probe on pull
 When auto-probe is on, a probe SHALL run 3 seconds after the player enters combat, if the player is still in combat. `/ttl auto` and the options checkbox SHALL toggle it.

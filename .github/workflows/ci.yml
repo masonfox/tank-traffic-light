@@ -59,10 +59,10 @@ jobs:
       - name: Install OpenSpec CLI
         run: npm ci --ignore-scripts --prefix ci/openspec
 
-      # Not --strict yet: existing specs carry length warnings (design Decision 8).
-      # Errors fail the run; warnings are only logged.
+      # Strict: warnings (such as a requirement over 500 characters) fail the run
+      # too (design Decision 8).
       - name: Validate specs
-        run: ci/openspec/node_modules/.bin/openspec validate --all
+        run: ci/openspec/node_modules/.bin/openspec validate --all --strict
 
   test:
     runs-on: ubuntu-latest

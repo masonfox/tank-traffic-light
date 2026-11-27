@@ -105,7 +105,7 @@ job lint (ubuntu-latest)
   luac -p $(git ls-files '*.lua')
   lua scripts/check-toc.lua
   npm ci --ignore-scripts --prefix ci/openspec
-  ci/openspec/node_modules/.bin/openspec validate --all   (not --strict, see Decision 8)
+  ci/openspec/node_modules/.bin/openspec validate --all --strict   (see Decision 8)
 
 job test (ubuntu-latest)
   leafo/gh-actions-lua (5.1) + leafo/gh-actions-luarocks
@@ -126,11 +126,13 @@ LuaRocks trees are cached per OS and rockspec list. Actions and the OpenSpec CLI
 - `max_line_length` is set to the codebase's current longest line rather than reflowing code.
 - Existing warnings are fixed, not ignored. A per-line `-- luacheck: ignore` is allowed only with a reason, such as the intentional `UnitInRaid ~= nil` check.
 
-### 8. Spec validation without strict mode, for now
+### 8. Strict spec validation
 
-`openspec validate --all --strict` fails on the current repo. Several main specs (`settings`, `nameplate-lights` and others) have requirement descriptions over 500 characters. Without `--strict`, every item passes. (`baseline-current-behavior`, which carried the same warnings, was archived during review with `--skip-specs`, since its specs were already in `openspec/specs/`.) CI therefore runs non-strict validation: errors fail the run, warnings are only logged.
+CI runs `openspec validate --all --strict`, so warnings fail the run as well as errors.
 
-**Alternatives:** fixing the specs in this change was rejected because it would reword player-facing specs inside a tooling change. Running strict mode only on active changes was rejected because it adds per-item scripting for a temporary state. A follow-up change will split the long requirements, fix the stale mob-list scenario titles, and then switch CI to `--strict`.
+The plan was to start non-strict and leave the spec cleanup to a follow-up change, because seven main-spec requirements (in `settings`, `nameplate-lights` and `diagnostics`) were over 500 characters. During review the follow-up was folded in instead. Each long requirement was split into smaller requirements, each stating one behavior, and edited directly in `openspec/specs/` (requirement text can't be split through a MODIFIED delta without restating it). Every scenario kept its exact title and text and moved under the requirement it describes, so test matching (Decision 5, which ignores requirement names) is unaffected. `baseline-current-behavior`, which carried the same warnings, was archived with `--skip-specs`, since its specs were already in `openspec/specs/`.
+
+**Alternatives:** keeping non-strict validation was rejected once the cleanup was small enough to do here; it would have let new long requirements in until the follow-up landed. Running strict mode only on active changes was rejected because it adds per-item scripting.
 
 ## Risks / Trade-offs
 
@@ -141,7 +143,7 @@ LuaRocks trees are cached per OS and rockspec list. Actions and the OpenSpec CLI
 - **The coverage report can make spec wording look like a test problem.** Stale titles such as "Unlock the list from the window" will show up as uncovered or awkward. → They're `settings` scenarios about the options window, so they fall outside this change's test scope. They're noted for a later spec cleanup and not renamed here.
 - **New dev-only files sit beside the addon in the AddOns folder.** The client ignores them because they're not in the TOC. → A packaging step that excludes them is left for whenever releases are zipped.
 
-- **Non-strict validation lets new long requirements in.** → It's temporary. The follow-up spec cleanup turns `--strict` on, and reviewers can watch the warnings in the lint log until then.
+- **Strict validation fails on any new warning.** A future OpenSpec release could add a warning rule. → The CLI version is locked in `ci/openspec/package-lock.json`, so new rules only arrive with a deliberate upgrade.
 
 ## Migration Plan
 

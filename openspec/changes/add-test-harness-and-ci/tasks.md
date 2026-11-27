@@ -43,4 +43,4 @@
 
 - After the first green run on `main`, mark `lint` and `test` as required status checks in GitHub branch protection (manual repository setting).
 - Archive this change once merged.
-- Follow-up change: split the over-500-character requirements, fix the stale mob-list scenario titles in `settings`, then switch CI to `openspec validate --all --strict`.
+- Follow-up change: fix the stale mob-list scenario titles in `settings`. (Splitting the long requirements and switching CI to `--strict` were done in this change during review.)
