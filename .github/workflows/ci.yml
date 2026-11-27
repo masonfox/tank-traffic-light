@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Pinned so a new release can't break CI overnight (design Decision 6).
+  LUAROCKS_VERSION: "3.13.0"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Lua 5.1
+        uses: leafo/gh-actions-lua@32909a2dea0a48c433aec79e7fcd31b4cd55800f # v13.1.0
+        with:
+          luaVersion: "5.1"
+
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@1c4a92caecc8f6850f673cbadfd57b3e555417ce # v6.1.1
+        with:
+          luaRocksVersion: ${{ env.LUAROCKS_VERSION }}
+
+      - name: Cache LuaRocks tree
+        uses: actions/cache@v6.1.0
+        with:
+          path: .luarocks
+          key: ${{ runner.os }}-lua5.1-luarocks${{ env.LUAROCKS_VERSION }}-luacheck1.2.0-1
+
+      - name: Install luacheck
+        run: luarocks install luacheck 1.2.0-1
+
+      - name: Lint
+        run: luacheck .
+
+      - name: Syntax check (Lua 5.1)
+        run: luac -p $(git ls-files '*.lua')
+
+      - name: TOC check
+        run: lua scripts/check-toc.lua
+
+      - name: Set up Node
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "24"
+
+      # Exact CLI version and its whole dependency tree are locked in
+      # ci/openspec/package-lock.json; install scripts are not run.
+      - name: Install OpenSpec CLI
+        run: npm ci --ignore-scripts --prefix ci/openspec
+
+      # Strict: warnings (such as a requirement over 500 characters) fail the run
+      # too (design Decision 8).
+      - name: Validate specs
+        run: ci/openspec/node_modules/.bin/openspec validate --all --strict
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Lua 5.1
+        uses: leafo/gh-actions-lua@32909a2dea0a48c433aec79e7fcd31b4cd55800f # v13.1.0
+        with:
+          luaVersion: "5.1"
+
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@1c4a92caecc8f6850f673cbadfd57b3e555417ce # v6.1.1
+        with:
+          luaRocksVersion: ${{ env.LUAROCKS_VERSION }}
+
+      - name: Cache LuaRocks tree
+        uses: actions/cache@v6.1.0
+        with:
+          path: .luarocks
+          key: ${{ runner.os }}-lua5.1-luarocks${{ env.LUAROCKS_VERSION }}-busted2.3.0-1-luacov0.17.0-1
+
+      - name: Install busted and luacov
+        run: |
+          luarocks install busted 2.3.0-1
+          luarocks install luacov 0.17.0-1
+
+      - name: Run tests
+        run: busted --coverage
+
+      # Per-file totals for the addon's root .lua files, from the Summary
+      # section of luacov.report.out, as a table in the job summary. Root .lua
+      # files listed in the TOC but never loaded by tests (Options.lua,
+      # Preview.lua; design Decision 2) get a "not loaded by tests" row, so the
+      # total covers loaded files only.
+      - name: Coverage summary
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ ! -f luacov.stats.out ]; then
+            echo "No coverage data (luacov.stats.out missing)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! luacov; then echo "Coverage report failed (luacov exited non-zero); see the step log." >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          {
+            echo "### Coverage (addon files)"
+            echo
+            echo "| File | Hits | Missed | Coverage |"
+            echo "| --- | ---: | ---: | ---: |"
+            awk '
+              FNR == NR {
+                line = $0; sub(/\r$/, "", line); gsub(/^[ \t]+|[ \t]+$/, "", line)
+                if (line !~ /^#/ && line ~ /\.lua$/ && line !~ /[\/\\]/) toc[++ntoc] = line
+                next
+              }
+              /^Summary$/ { insummary = 1; next }
+              insummary && NF == 4 && $1 ~ /\.lua$/ {
+                file = $1; sub(/^\.\//, "", file)
+                if (file !~ /\//) { seen[file] = 1; printf "| %s | %s | %s | %s |\n", file, $2, $3, $4 }
+              }
+              insummary && $1 == "Total" { total = sprintf("| **Total (loaded files)** | %s | %s | %s |", $2, $3, $4) }
+              END {
+                for (i = 1; i <= ntoc; i++)
+                  if (!(toc[i] in seen)) printf "| %s | — | — | not loaded by tests |\n", toc[i]
+                if (total != "") print total
+              }
+            ' TankTrafficLight.toc luacov.report.out
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Which openspec/specs/ scenarios have a test named after them (design
+      # Decision 5). Runs busted itself with the JSON output handler and always
+      # exits 0, so the report appears even when the tests above failed.
+      - name: Spec coverage
+        if: always()
+        continue-on-error: true
+        run: lua scripts/spec-coverage.lua

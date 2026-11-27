@@ -1,0 +1,22 @@
+# Lua 5.1 test image for running the lint and test steps on any OS.
+# Build and run it as shown in README.md ("With Docker").
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      lua5.1 liblua5.1-0-dev luarocks build-essential git ca-certificates unzip \
+ && rm -rf /var/lib/apt/lists/*
+
+# Keep these versions in sync with .github/workflows/ci.yml.
+RUN luarocks install luacheck 1.2.0-1 \
+ && luarocks install busted 2.3.0-1 \
+ && luarocks install luacov 0.17.0-1
+
+RUN ln -sf /usr/bin/lua5.1 /usr/local/bin/lua \
+ && ln -sf /usr/bin/luac5.1 /usr/local/bin/luac
+
+# The repo is bind-mounted and owned by the host user, so git would refuse it
+# as a "dubious ownership" directory without this.
+RUN git config --system --add safe.directory /repo
+
+WORKDIR /repo

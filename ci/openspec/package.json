@@ -1,0 +1,8 @@
+{
+  "name": "ttl-ci-openspec",
+  "private": true,
+  "description": "Locks the OpenSpec CLI and its dependency tree for CI (npm ci --ignore-scripts --prefix ci/openspec).",
+  "dependencies": {
+    "@fission-ai/openspec": "2.1.1"
+  }
+}

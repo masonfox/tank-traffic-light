@@ -1,0 +1,9 @@
+-- luacov config: measure only the addon's own root *.lua files.
+-- spec/support/addon.lua loads them by bare file name ("Safe.lua"), so their chunk
+-- names have no directory part; luacov strips ".lua" before matching.
+return {
+    statsfile = "luacov.stats.out",
+    reportfile = "luacov.report.out",
+    include = { "^[^/]+$", "^%./[^/]+$" },
+    exclude = { "^spec/", "^%./spec/", "^scripts/", "^%./scripts/", "luacov", "busted" },
+}

@@ -7,11 +7,18 @@ Defines the traffic light widget attached to enemy nameplates: how it looks, whe
 ## Requirements
 
 ### Requirement: Three-lamp traffic light
-Each light SHALL be a dark housing with three round lamps ordered red, yellow, green. For RED, YELLOW and GREEN, the lamp matching the current state SHALL be lit at full brightness in the active palette's color and the other two SHALL be dimmed. For GREY, all three lamps SHALL be dimmed and the whole light SHALL be drawn at the grey-opacity setting (0.1 to 1, default 0.45), so it is visibly present but quieter than a lit light. Changing the grey opacity SHALL repaint visible GREY lights immediately. When a unit has no state, its light SHALL be hidden.
+Each light SHALL be a dark housing with three round lamps ordered red, yellow, green. For RED, YELLOW and GREEN, the lamp matching the current state SHALL be lit at full brightness in the active palette's color and the other two SHALL be dimmed. When a unit has no state, its light SHALL be hidden.
 
 #### Scenario: Unit is GREEN
 - **WHEN** a unit is classified GREEN
 - **THEN** its light is shown with the green lamp lit and the red and yellow lamps dimmed
+
+#### Scenario: Unit has no light
+- **WHEN** a unit's classification is "no light"
+- **THEN** its traffic light is hidden
+
+### Requirement: Grey light appearance
+For GREY, all three lamps SHALL be dimmed and the whole light SHALL be drawn at the grey-opacity setting (0.1 to 1, default 0.45), so it is visibly present but quieter than a lit light. Changing the grey opacity SHALL repaint visible GREY lights immediately.
 
 #### Scenario: Unit is GREY
 - **WHEN** a unit is classified GREY
@@ -25,10 +32,6 @@ Each light SHALL be a dark housing with three round lamps ordered red, yellow, g
 - **WHEN** a GREY unit becomes RED
 - **THEN** the light returns to full opacity with the red lamp lit
 
-#### Scenario: Unit has no light
-- **WHEN** a unit's classification is "no light"
-- **THEN** its traffic light is hidden
-
 ### Requirement: Yellow pulses
 While a light is YELLOW and the pulse setting is on, the whole light SHALL pulse (fade between full and reduced opacity). In any other state, or with pulse off, the light SHALL be fully opaque and still.
 
@@ -41,19 +44,11 @@ While a light is YELLOW and the pulse setting is on, the whole light SHALL pulse
 - **THEN** pulsing stops and the light returns to full opacity
 
 ### Requirement: Placement
-The light SHALL be anchored to the nameplate's health bar on the side set by the placement setting: left (default), right, top, or bottom. On the left or right the light SHALL stand vertically with red on top, vertically centred on the health bar. On the top or bottom the light SHALL lie horizontally with red on the left, and the alignment setting SHALL place it along the health bar: Left aligns the light's left edge with the bar's left edge, Middle centres it (default), and Right aligns the light's right edge with the bar's right edge. Alignment SHALL have no effect for left and right placement. For every placement, the space between the light and the health bar SHALL equal the gap setting. If no health bar is found, the light SHALL anchor to the nameplate itself.
+The light SHALL be anchored to the nameplate's health bar on the side set by the placement setting: left (default), right, top, or bottom. On the left or right the light SHALL stand vertically with red on top, vertically centred on the health bar. On the top or bottom the light SHALL lie horizontally with red on the left. For every placement, the space between the light and the health bar SHALL equal the gap setting. If no health bar is found, the light SHALL anchor to the nameplate itself.
 
 #### Scenario: Top placement
 - **WHEN** placement is "top", alignment is Middle, and the gap is 10
 - **THEN** the light is horizontal, centred, and sits 10 units above the health bar
-
-#### Scenario: Bottom placement aligned left
-- **WHEN** placement is "bottom", alignment is Left, and the gap is 2
-- **THEN** the light is horizontal, sits 2 units below the health bar, and its left edge lines up with the bar's left edge
-
-#### Scenario: Top placement aligned right
-- **WHEN** placement is "top" and alignment is Right
-- **THEN** the light's right edge lines up with the health bar's right edge
 
 #### Scenario: Left placement
 - **WHEN** placement is "left" and the gap is 4
@@ -62,6 +57,17 @@ The light SHALL be anchored to the nameplate's health bar on the side set by the
 #### Scenario: Right placement with a larger gap
 - **WHEN** placement is "right" and the gap is 20
 - **THEN** the light is vertical and sits 20 units right of the health bar
+
+### Requirement: Alignment along the health bar
+For top and bottom placement, the alignment setting SHALL place the light along the health bar: Left aligns the light's left edge with the bar's left edge, Middle centres it (default), and Right aligns the light's right edge with the bar's right edge. Alignment SHALL have no effect for left and right placement.
+
+#### Scenario: Bottom placement aligned left
+- **WHEN** placement is "bottom", alignment is Left, and the gap is 2
+- **THEN** the light is horizontal, sits 2 units below the health bar, and its left edge lines up with the bar's left edge
+
+#### Scenario: Top placement aligned right
+- **WHEN** placement is "top" and alignment is Right
+- **THEN** the light's right edge lines up with the health bar's right edge
 
 #### Scenario: Alignment ignored on the sides
 - **WHEN** placement is "left" and alignment changes from Middle to Right

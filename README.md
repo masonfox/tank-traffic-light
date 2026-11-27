@@ -53,3 +53,51 @@ Logs live in the `TankTrafficLightDB` saved variable (`WTF/Account/<account>/Sav
 ## Development
 
 Behavior is specified with [OpenSpec](https://github.com/Fission-AI/OpenSpec) in `openspec/specs/`, with past changes under `openspec/changes/archive/`.
+
+CI (`.github/workflows/ci.yml`) runs on every push, on pull requests, and on demand. It has two jobs:
+
+- **lint**: `luacheck .` (config in `.luacheckrc`), `lua scripts/check-toc.lua` (every root `.lua` file is listed in the TOC files and every listed file exists), and `openspec validate --all --strict` (warnings fail too).
+- **test**: the [busted](https://lunarmodules.github.io/busted/) suite on Lua 5.1 with line coverage, then two reports in the job summary: line coverage per addon file, and spec coverage (which scenarios have a test).
+
+### Tests
+
+Test files live in `spec/` and end in `_spec.lua` (config in `.busted`). They run outside the game against a fake world in `spec/support/`:
+
+- `spec/support/wow.lua` stands in for the game API. Units, threat, group roles, the clock, sounds and chat output are all plain tables a test sets up and reads back. `C_Timer.After` callbacks wait in `world.pending` until `world.advance(seconds)` moves the fake clock past their due time. A global the fake world doesn't provide is an error, so a misspelled API name fails the test. The read is also recorded in `world.missing`, and `spec/support/strict_globals.lua` (a busted helper set in `.busted`) fails any test that leaves an entry there, so a read the addon swallows with `pcall` still fails. A test that reads an unknown global on purpose empties `world.missing` itself. The helper clears its world list after each test, so a world built once in `setup()` and reused across tests is checked after the first test only and missed after that. Build every fake world per test (in `before_each` or inside the test), including one passed prebuilt to `addon.load`.
+- `spec/support/addon.lua` loads the addon files in TOC order into a fresh environment per test and fires `ADDON_LOADED` with the saved variables the test passes in.
+
+`spec/harness_spec.lua` shows how to use both. Load a fresh addon in `before_each` so no state leaks between tests.
+
+Name tests after the spec scenario they cover: the outer `describe` is the capability's directory name under `openspec/specs/`, an optional middle `describe` is the requirement, and the `it` is the exact scenario title.
+
+```lua
+describe("threat-classification", function()
+    describe("Readable threat status drives the light", function()
+        it("Mob is on a co-tank", function() ... end)
+    end)
+end)
+```
+
+Tests that cover no scenario go under `describe("unit: ...")`. `scripts/spec-coverage.lua` matches tests to scenarios by capability and title (the requirement name is ignored) and reports, per capability, covered versus total scenarios, the scenarios with no test, and tests whose name matches no scenario, which usually means a scenario was renamed. Neither report fails the run.
+
+To run everything locally with Lua 5.1, busted, luacov, luacheck and the OpenSpec CLI installed, from a Unix shell (Linux, macOS or WSL; the commands and scripts use `ls`, `find`, `test` and `/dev/null`, so they fail with native Windows Lua):
+
+```sh
+luacheck .
+luac -p $(git ls-files '*.lua')   # Lua 5.1 parser; rejects goto and other 5.2+ syntax
+lua scripts/check-toc.lua
+openspec validate --all --strict
+busted                         # or: busted --coverage && luacov
+lua scripts/spec-coverage.lua  # prints the spec coverage report
+```
+
+#### With Docker (any OS, including Windows)
+
+`scripts/Dockerfile.test` builds a Lua 5.1 image with the same luacheck, busted and luacov versions as CI. From the repo root (in a POSIX shell such as Git Bash or WSL; on Windows Git Bash, prefix `docker run` with `MSYS_NO_PATHCONV=1` and mount `"$(pwd -W):/repo"`):
+
+```sh
+docker build -t ttl-test -f scripts/Dockerfile.test scripts
+docker run --rm -v "$PWD:/repo" -w /repo ttl-test sh -c 'luacheck . && luac -p $(git ls-files "*.lua") && lua scripts/check-toc.lua && busted && lua scripts/spec-coverage.lua'
+```
+
+The image has no OpenSpec CLI, so run `openspec validate --all --strict` on the host.
