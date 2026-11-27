@@ -128,9 +128,9 @@ LuaRocks trees are cached per OS and rockspec list. Actions and the OpenSpec CLI
 
 ### 8. Spec validation without strict mode, for now
 
-`openspec validate --all --strict` fails on the current repo. Several main specs (`settings`, `nameplate-lights` and others) have requirement descriptions over 500 characters, and the unarchived `baseline-current-behavior` change carries the same warnings. Without `--strict`, all 10 items pass today. CI therefore runs non-strict validation: errors fail the run, warnings are only logged.
+`openspec validate --all --strict` fails on the current repo. Several main specs (`settings`, `nameplate-lights` and others) have requirement descriptions over 500 characters. Without `--strict`, every item passes. (`baseline-current-behavior`, which carried the same warnings, was archived during review with `--skip-specs`, since its specs were already in `openspec/specs/`.) CI therefore runs non-strict validation: errors fail the run, warnings are only logged.
 
-**Alternatives:** fixing the specs in this change was rejected because it would reword player-facing specs inside a tooling change. Running strict mode only on active changes was rejected because it adds per-item scripting for a temporary state. A follow-up change will split the long requirements, archive `baseline-current-behavior`, fix the stale mob-list scenario titles, and then switch CI to `--strict`.
+**Alternatives:** fixing the specs in this change was rejected because it would reword player-facing specs inside a tooling change. Running strict mode only on active changes was rejected because it adds per-item scripting for a temporary state. A follow-up change will split the long requirements, fix the stale mob-list scenario titles, and then switch CI to `--strict`.
 
 ## Risks / Trade-offs
 
